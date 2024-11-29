@@ -1,217 +1,143 @@
 import React, { useState } from "react";
-import axios from "axios";
-
-export const api = axios.create({
-  baseURL: "http://localhost:8000",
-});
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { loginUser, registerUser } from "./signup_login";
+import Home from "./pages/Home";
+import ListBusinesses from "./pages/ListBusinesses";
 
 const App = () => {
-  const [user, setUser] = useState({
+  const [registerData, setRegisterData] = useState({
     username: "",
     email: "",
     password: "",
     is_seller: false,
   });
 
-  const [business, setBusiness] = useState({
-    name: "",
-    description: "",
-    location: "",
-    owner_id: "",
-    founded: "",
-    industry: "",
-    email: "",
+  const [loginData, setLoginData] = useState({
+    username: "",
+    password: "",
   });
 
-  const handleUserChange = (event) => {
+  const handleRegisterChange = (event) => {
     const { name, value, type, checked } = event.target;
-    setUser({ ...user, [name]: type === "checkbox" ? checked : value });
+    setRegisterData({ ...registerData, [name]: type === "checkbox" ? checked : value });
   };
 
-  const handleUserSubmit = async (event) => {
+  const handleLoginChange = (event) => {
+    const { name, value } = event.target;
+    setLoginData({ ...loginData, [name]: value });
+  };
+
+  const handleRegisterSubmit = async (event) => {
     event.preventDefault();
     try {
-      await api.post("/user/", user);
-      setUser({
+      await registerUser(registerData);
+      alert("Registration successful!");
+      setRegisterData({
         username: "",
         email: "",
         password: "",
         is_seller: false,
       });
-      alert("User created successfully!");
     } catch (error) {
-      alert(`Error creating user: ${error.response?.data?.detail || error.message}`);
+      alert(`Registration error: ${error.response?.data?.detail || error.message}`);
     }
   };
 
-  const handleBusinessChange = (event) => {
-    const { name, value, type, checked } = event.target;
-    setBusiness({ ...business, [name]: type === "checkbox" ? checked : value });
-  };
-
-  const handleBusinessSubmit = async (event) => {
+  const handleLoginSubmit = async (event) => {
     event.preventDefault();
     try {
-      const businessData = {
-        ...business,
-        owner_id: business.owner_id ? parseInt(business.owner_id) : null,
-        founded: business.founded ? parseInt(business.founded) : null
-      };
-      
-      await api.post("/business", businessData);
-      setBusiness({
-        name: "",
-        description: "",
-        location: "",
-        owner_id: "",
-        founded: "",
-        industry: "",
-        email: "",
+      const response = await loginUser(loginData);
+      alert("Login successful!");
+      console.log("User token:", response.token);
+      setLoginData({
+        username: "",
+        password: "",
       });
-      alert("Business created successfully!");
     } catch (error) {
-      alert(`Error creating business: ${error.response?.data?.detail || error.message}`);
+      alert(`Login error: ${error.response?.data?.detail || error.message}`);
     }
   };
 
   return (
-    <div>
-      <nav className="navbar navbar-expand-lg navbar-light bg-light">
-        <div className="container-fluid">
-          <a className="navbar-brand" href="#">Marketplace App</a>
-        </div>
-      </nav>
-
-      <div className="container mt-4">
-        <div className="row">
-          <div className="col-md-6">
-            <h2>Create User</h2>
-            <form onSubmit={handleUserSubmit}>
-              <div className="form-group">
-                <label>Username:</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="username"
-                  value={user.username}
-                  onChange={handleUserChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Email:</label>
-                <input
-                  type="email"
-                  className="form-control"
-                  name="email"
-                  value={user.email}
-                  onChange={handleUserChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Password:</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  name="password"
-                  value={user.password}
-                  onChange={handleUserChange}
-                  required
-                />
-              </div>
-              <div className="form-check">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  name="is_seller"
-                  checked={user.is_seller}
-                  onChange={handleUserChange}
-                />
-                <label className="form-check-label">Is Seller</label>
-              </div>
-              <button type="submit" className="btn btn-primary mt-3">Create User</button>
-            </form>
+    <Router>
+      <div>
+        <nav className="navbar navbar-expand-lg navbar-light bg-light">
+          <div className="container">
+            <Link className="navbar-brand" to="/">Marketplace</Link>
+            <div className="navbar-nav">
+              <Link className="nav-link" to="/">Home</Link>
+              <Link className="nav-link" to="/businesses">Businesses</Link>
+            </div>
           </div>
+        </nav>
 
-          <div className="col-md-6">
-            <h2>Create Business</h2>
-            <form onSubmit={handleBusinessSubmit}>
-              <div className="form-group">
-                <label>Name:</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="name"
-                  value={business.name}
-                  onChange={handleBusinessChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Description:</label>
-                <textarea
-                  className="form-control"
-                  name="description"
-                  value={business.description}
-                  onChange={handleBusinessChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Location:</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="location"
-                  value={business.location}
-                  onChange={handleBusinessChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Industry:</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="industry"
-                  value={business.industry}
-                  onChange={handleBusinessChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Email:</label>
-                <input
-                  type="email"
-                  className="form-control"
-                  name="email"
-                  value={business.email}
-                  onChange={handleBusinessChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Founded Year:</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  name="founded"
-                  value={business.founded}
-                  onChange={handleBusinessChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Owner ID:</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  name="owner_id"
-                  value={business.owner_id}
-                  onChange={handleBusinessChange}
-                />
-              </div>
-              <button type="submit" className="btn btn-primary mt-3">Create Business</button>
-            </form>
-          </div>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/businesses" element={<ListBusinesses />} />
+        </Routes>
+
+        <div className="container mt-4">
+          <h2>Register</h2>
+          <form onSubmit={handleRegisterSubmit}>
+            <input
+              type="text"
+              name="username"
+              value={registerData.username}
+              onChange={handleRegisterChange}
+              placeholder="Username"
+              required
+            />
+            <input
+              type="email"
+              name="email"
+              value={registerData.email}
+              onChange={handleRegisterChange}
+              placeholder="Email"
+              required
+            />
+            <input
+              type="password"
+              name="password"
+              value={registerData.password}
+              onChange={handleRegisterChange}
+              placeholder="Password"
+              required
+            />
+            <label>
+              <input
+                type="checkbox"
+                name="is_seller"
+                checked={registerData.is_seller}
+                onChange={handleRegisterChange}
+              />
+              Is Seller
+            </label>
+            <button type="submit">Register</button>
+          </form>
+
+          <h2>Login</h2>
+          <form onSubmit={handleLoginSubmit}>
+            <input
+              type="text"
+              name="username"
+              value={loginData.username}
+              onChange={handleLoginChange}
+              placeholder="Username"
+              required
+            />
+            <input
+              type="password"
+              name="password"
+              value={loginData.password}
+              onChange={handleLoginChange}
+              placeholder="Password"
+              required
+            />
+            <button type="submit">Login</button>
+          </form>
         </div>
       </div>
-    </div>
+    </Router>
   );
 };
 

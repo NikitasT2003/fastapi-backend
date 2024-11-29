@@ -1,4 +1,0 @@
-[tool.poetry.dependencies]
-python-jose = {extras = ["cryptography"], version = "^3.3.0"}
-passlib = {extras = ["bcrypt"], version = "^1.7.4"}
-python-multipart = "^0.0.5" 
