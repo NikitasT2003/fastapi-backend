@@ -1,16 +1,13 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
+import Home from "../components/pages/home/page";
 import ListBusinesses from "./pages/ListBusinesses";
 
 const App = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/list-businesses" element={<ListBusinesses />} />
-      </Routes>
-    </Router>
+    <div>
+      <h1>Hello World</h1>
+    </div>
   );
 };
 
