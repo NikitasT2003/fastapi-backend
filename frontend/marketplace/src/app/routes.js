@@ -1,19 +1,17 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
-import BusinessListings from '../components/pages/business_listings/page';
-// Import other components/pages as needed
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import Home from "../components/pages/home";
+import BusinessListings from "../components/pages/business_listings";
+import Login from "../components/pages/login";
+import PageNotFound from "../components/pages/page_not_found";
 
-function AppRoutes() {
-  return (
-    <Router>
-      <Switch>
-        <Route exact path="/" component={HomePage} />
-        <Route path="/business_listings" component={BusinessListings} />
-        {/* Add more routes as needed */}
-        <Route path="*" component={NotFoundPage} /> {/* Optional: 404 page */}
-      </Switch>
-    </Router>
-  );
-}
+const AppRoutes = () => (
+  <Routes>
+    <Route path="/" element={<Home />} />
+    <Route path="/business-listings" element={<BusinessListings />} />
+    <Route path="/login" element={<Login />} />
+    <Route path="*" element={<PageNotFound />} />
+  </Routes>
+);
 
 export default AppRoutes;

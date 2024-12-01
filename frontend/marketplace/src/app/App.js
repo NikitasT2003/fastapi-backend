@@ -1,13 +1,20 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "../components/pages/home/page";
-import ListBusinesses from "./pages/ListBusinesses";
+import { BrowserRouter as Router } from "react-router-dom";
+import AppRoutes from "./routes";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
+import EmailSubscribe from "../components/EmailSubscribe";
 
 const App = () => {
   return (
-    <div>
-      <h1>Hello World</h1>
-    </div>
+    <Router>
+      <div>
+        <Header />
+        <AppRoutes />
+        <EmailSubscribe />
+        <Footer />
+      </div>
+    </Router>
   );
 };
 
