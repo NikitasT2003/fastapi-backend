@@ -1,27 +1,43 @@
 {
-  "version": 2,
-  "builds": [
+  "buildCommand": "next build",
+  "cleanUrls": true,
+  "framework": "nextjs",
+  "functions": {
+    "api/*.js": {
+      "memory": 128,
+      "maxDuration": 10
+    },
+    "api/**/*.ts": {
+      "memory": 128,
+      "maxDuration": 10
+    },
+    "src/pages/**/*": {
+      "memory": 128,
+      "maxDuration": 10
+    },
+    "pages/api/auth/[...nextauth].ts": {
+      "memory": 128,
+      "maxDuration": 10
+    }
+  },
+  "rewrites": [
     {
-      "src": "next.config.js",
-      "use": "@vercel/next"
+      "source": "/api/auth/:path*",
+      "destination": "/api/auth/:path*"
     },
     {
-      "src": "main.py",
-      "use": "@vercel/python"
+      "source": "/api/:path*",
+      "destination": "https://marketplace-henna-three.vercel.app/api/:path*"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "https://marketplace-henna-three.vercel.app/auth/:path*"
     }
   ],
   "routes": [
     {
-      "src": "/api/auth/(.*)",
-      "dest": "/api/auth/$1"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/main.py"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "backend/marketplace_app/main.py"
     }
   ]
-} 
+}
