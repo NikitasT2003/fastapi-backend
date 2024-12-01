@@ -3,7 +3,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes import auth , user
+from routes import api , auth
+
 
 app = FastAPI(debug=True)
 
@@ -21,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(user.router)
+app.include_router(api.router, prefix = "/api")
 app.include_router(auth.router, prefix = "/auth")
 
 if __name__ == "__main__":
