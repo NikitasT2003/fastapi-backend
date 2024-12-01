@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL 
 
-const loginUser = async (credentials) => {
+const Login = async (credentials) => {
     try {
         const params = new URLSearchParams();
         for (const key in credentials) {
@@ -25,7 +25,7 @@ const loginUser = async (credentials) => {
     }
 };
 
-const registerUser = async (userData) => {
+const Signup = async (userData) => {
     try {
         const response = await axios.post(`${API_URL}/auth/register`, userData);
         return response.data;
@@ -49,4 +49,4 @@ const fetchUserProfile = async (token) => {
     }
 };
 
-export { loginUser, registerUser, fetchUserProfile };
+export { Login, Signup, fetchUserProfile };

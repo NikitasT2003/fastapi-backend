@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 
-export function BusinessCard({
+export default function BusinessCard({
   name,
   description,
   industry,

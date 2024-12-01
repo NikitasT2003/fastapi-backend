@@ -5,7 +5,7 @@ import { User, Bell } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
-export function Header() {
+export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false) // This should be replaced with actual auth state
 

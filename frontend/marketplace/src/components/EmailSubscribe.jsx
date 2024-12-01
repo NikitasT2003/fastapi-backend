@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "@shadcn/ui/button"
+import { Input } from "@shadcn/ui/input"
 
-export function EmailSubscribe() {
+export default function EmailSubscribe() {
   const [email, setEmail] = useState('')
 
   const handleSubmit = (e) => {
