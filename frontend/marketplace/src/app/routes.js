@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
-import BusinessListings from './components/pages/business_listings/page';
+import BusinessListings from '../components/pages/business_listings/page';
 // Import other components/pages as needed
 
 function AppRoutes() {
