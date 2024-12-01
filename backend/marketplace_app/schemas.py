@@ -1,21 +1,25 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 
 # User Schemas
 class UserBase(BaseModel):
     username: str
-    email: str
 
 class UserCreate(UserBase):
+    email: EmailStr
     password: str
     is_seller: bool
 
+class UserLogin(UserBase):
+    password: str
+
 class UserResponse(UserBase):
     id: int
+    email: EmailStr
     is_active: bool
     is_admin: bool
-    last_seen: datetime
+    last_seen: Optional[datetime] = None
     owner_id: Optional[str] = None
 
     class Config:

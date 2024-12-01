@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { User, Bell } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
+
 
 export function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -45,17 +47,36 @@ export function Header() {
               </button>
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                  <Link href="/signup" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Sign Up
-                  </Link>
-                  <Link href="/login" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Login
-                  </Link>
-                  {isLoggedIn && (
+                  {isLoggedIn ? (
                     <>
                       <Link href="/account" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                         Account Settings
                       </Link>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            Edit Profile
+                          </button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          {/* Add your profile editing form or content here */}
+                          <h2 className="text-lg font-semibold">Edit Profile</h2>
+                          {/* Example form fields */}
+                          <form>
+                            <label className="block text-sm font-medium text-gray-700">
+                              Name
+                              <input type="text" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mt-4">
+                              Email
+                              <input type="email" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+                            </label>
+                            <button type="submit" className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md">
+                              Save Changes
+                            </button>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
                       <button
                         onClick={() => {
                           // Implement logout functionality
@@ -67,6 +88,10 @@ export function Header() {
                         Logout
                       </button>
                     </>
+                  ) : (
+                    <Link href="/auth" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      Signup / Login
+                    </Link>
                   )}
                 </div>
               )}

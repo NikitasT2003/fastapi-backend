@@ -2,31 +2,26 @@
   "version": 2,
   "builds": [
     {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "build" }
+      "src": "next.config.js",
+      "use": "@vercel/next"
+    },
+    {
+      "src": "main.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
+      "src": "/api/auth/(.*)",
+      "dest": "/api/auth/$1"
     },
     {
-      "src": "/favicon.ico",
-      "dest": "/favicon.ico"
-    },
-    {
-      "src": "/manifest.json",
-      "dest": "/manifest.json"
-    },
-    {
-      "src": "/logo(.*)",
-      "dest": "/logo$1"
+      "src": "/api/(.*)",
+      "dest": "/main.py"
     },
     {
       "src": "/(.*)",
-      "dest": "/main.py"
+      "dest": "/$1"
     }
   ]
 } 

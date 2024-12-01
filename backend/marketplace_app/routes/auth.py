@@ -12,7 +12,7 @@ from models import User
 router = APIRouter()
 
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/signup", response_model=UserResponse)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     try:
         db_user = db.query(User).filter(User.username == user.username).first()
@@ -54,13 +54,12 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    print("Creating access token...")
+    
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    print("Access token created successfully")
+    
     
     return {"access_token": access_token, "token_type": "bearer"}
-
 
