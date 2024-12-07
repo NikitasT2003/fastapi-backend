@@ -1,33 +1,72 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/compat/router'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { apiRequest } from '@/utils/api'
 import { signIn } from 'next-auth/react'
+import { EyeOff, Eye } from 'react-feather';
 
 export function Auth() {
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true)
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSeller, setIsSeller] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false);
 
   const toggleAuthMode = () => setIsLogin(!isLogin)
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
+  const handleLogin = async () => {
     try {
-      const endpoint = isLogin ? '/auth/token' : '/auth/signup'
-      const payload = isLogin
-        ? { username, password }
-        : { username, email, password, is_seller: isSeller }
-      const data = await apiRequest(endpoint, 'POST', payload)
-      alert(data.message || 'Success')
+      const formData = new URLSearchParams();
+      formData.append('grant_type', 'password');
+      formData.append('username', username);
+      formData.append('password', password);
+
+      const response = await fetch('http://127.0.0.1:8000/auth/login', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString(),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Login failed');
+      }
+
+      alert(data.message || 'Login successful');
+      if(router){router.push('/home');} // Redirect after successful login
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }
+
+  const handleSignup = async () => {
+    try {
+      const payload = { username, email, password, is_seller: isSeller }
+      const data = await apiRequest('/auth/signup', 'POST', payload)
+      alert(data.message || 'Signup successful')
+      if(router){router.push('/login');} // Redirect after successful signup
     } catch (err: any) {
       setError(err.message)
+    }
+  }
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (isLogin) {
+      handleLogin();
+    } else {
+      handleSignup();
     }
   }
 
@@ -60,14 +99,21 @@ export function Auth() {
                 />
               </div>
             )}
-            <div className="mb-4">
+            <div className="mb-4 relative">
               <Input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2"
+              >
+                {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+              </button>
             </div>
             {!isLogin && (
               <div className="mb-4">
@@ -99,4 +145,4 @@ export function Auth() {
       </Card>
     </div>
   )
-} 
+}

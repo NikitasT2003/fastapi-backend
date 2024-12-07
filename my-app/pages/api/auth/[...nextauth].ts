@@ -22,26 +22,46 @@ export default NextAuth({
         throw new Error('Base URL is not defined');
       }
 
-      const response = await fetch(`${baseUrl}/auth/social-login`, {
+      // Check if the user already exists in your database
+      const response = await fetch(`${baseUrl}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           email: user.email,
-          name: user.name,
           provider: account?.provider,
         }),
       });
 
       const data = await response.json();
+
       if (response.ok) {
-        // Store the JWT token in a cookie or local storage
-        // You can also return true to allow the sign-in
+        // If login is successful, you can return true to allow the sign-in
         return true;
       } else {
-        // Handle errors
-        return false;
+        // If login fails, attempt to sign up the user
+        const signupResponse = await fetch(`${baseUrl}/signup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: user.email,
+            name: user.name,
+            provider: account?.provider,
+          }),
+        });
+
+        const signupData = await signupResponse.json();
+
+        if (signupResponse.ok) {
+          // If signup is successful, return true to allow the sign-in
+          return true;
+        } else {
+          // Handle errors for both login and signup
+          return false;
+        }
       }
     },
   },

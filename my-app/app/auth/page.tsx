@@ -1,5 +1,13 @@
 import { Auth } from '@/components/ui/Auth'
+import { Header } from '@/components/ui/Header'
 
 export default function AuthPage() {
-  return <Auth />
+  return (
+    <>
+      <Header />
+      <main className="flex justify-center items-center min-h-screen bg-gray-100">
+        <Auth />
+      </main>
+    </>
+  )
 }

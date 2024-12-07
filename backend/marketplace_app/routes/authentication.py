@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.post("/signup", response_model=UserResponse)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    try:
+    
         db_user = db.query(User).filter(User.username == user.username).first()
         if db_user:
             raise HTTPException(status_code=400, detail="Username already registered.")
@@ -24,19 +24,17 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
             username=user.username,
             email=user.email,
             password=hashed_password,
-            is_seller=user.is_seller
+            is_seller=user.is_seller,
+            is_admin = user.is_admin
         )
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
         return new_user
-    except Exception as e:
-        # Log the exception for debugging
-        print(f"Error creating user: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/token", response_model=Token)
+
+@router.post("/login", response_model=Token)
 async def login_for_access_token(
         form_data: OAuth2PasswordRequestForm = Depends(),
         db: Session = Depends(get_db)

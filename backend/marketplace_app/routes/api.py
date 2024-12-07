@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy.orm import Session
 import models
 import schemas
-from auth_handler import get_current_user
+from auth_handler import get_current_user 
 from database import get_db
 from unique_id import generate_random_id
 
@@ -45,6 +45,12 @@ async def update_user(user_id: int, user: schemas.UserCreate, db: Session = Depe
 @router.delete("/user/{user_id}", response_model=dict)
 async def delete_user(user_id: int, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.id == user_id).first()
+    
+    if not get_current_user.is_admin:
+        raise HTTPException(
+            status_code= 403 ,
+            detail="Admin access required to delete users."
+        )
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     db.delete(user)
@@ -58,9 +64,11 @@ async def get_businesses(db: Session = Depends(get_db)):
     return businesses
 
 @router.post("/business/", response_model=schemas.BusinessResponse)
-async def create_business(business: schemas.BusinessCreate, db: Session = Depends(get_db)):
-    # Generate a unique owner_id for the business
-    business.owner_id = generate_random_id()
+async def create_business(business: schemas.BusinessCreate, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Create a new business listing."""
+    if not current_user.is_seller:
+        raise HTTPException(status_code=403, detail="Only sellers can create a business listing.")
+    
     db_business = models.Business(**business.model_dump())
     db.add(db_business)
     db.commit()
@@ -69,28 +77,179 @@ async def create_business(business: schemas.BusinessCreate, db: Session = Depend
 
 @router.get("/business/{business_id}", response_model=schemas.BusinessResponse)
 async def get_business(business_id: int, db: Session = Depends(get_db)):
-    business = db.query(models.Business).filter(models.Business.id == business_id).first()
+    """Get a specific business listing by ID."""
+    business = db.query(models.Business).filter(models.Business.listing_id == business_id).first()
     if business is None:
         raise HTTPException(status_code=404, detail="Business not found")
     return business
 
 @router.put("/business/{business_id}", response_model=schemas.BusinessResponse)
-async def update_business(business_id: int, business: schemas.BusinessCreate, db: Session = Depends(get_db)):
-    db_business = db.query(models.Business).filter(models.Business.id == business_id).first()
+async def update_business(business_id: int, business: schemas.BusinessCreate, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Update a business listing."""
+    if not current_user.is_seller:
+        raise HTTPException(status_code=403, detail="Only sellers can update a business listing.")
+    
+    db_business = db.query(models.Business).filter(models.Business.listing_id == business_id).first()
     if db_business is None:
         raise HTTPException(status_code=404, detail="Business not found")
-    for key, value in business.model_dump().items():
-        setattr(db_business, key, value)
+    
+    # Update business details
+    db_business.title = business.title
+    db_business.description = business.description
+    db_business.price = business.price
+    db_business.industry = business.industry
+    
     db.commit()
     db.refresh(db_business)
     return db_business
 
 @router.delete("/business/{business_id}", response_model=dict)
-async def delete_business(business_id: int, db: Session = Depends(get_db)):
-    business = db.query(models.Business).filter(models.Business.id == business_id).first()
-    if business is None:
+async def delete_business(business_id: int, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Delete a business listing."""
+    if not current_user.is_seller:
+        raise HTTPException(status_code=403, detail="Only sellers can delete a business listing.")
+    
+    db_business = db.query(models.Business).filter(models.Business.listing_id == business_id).first()
+    if db_business is None:
         raise HTTPException(status_code=404, detail="Business not found")
-    db.delete(business)
+    
+    db.delete(db_business)
     db.commit()
     return {"message": "Business deleted successfully", "business_id": business_id}
+
+# Like Count Endpoint
+@router.get("/posts/{post_id}/likes/count", response_model=int)
+async def get_like_count(post_id: int, db: Session = Depends(get_db)):
+    """Get the total like count for a specific post."""
+    post = db.query(models.Post).filter(models.Post.post_id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    return len(post.likes)  # Return the count of likes
+
+@router.post("/posts/{post_id}/like", response_model=schemas.LikeResponse)
+async def like_post(post_id: int, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Like a post."""
+    post = db.query(models.Post).filter(models.Post.post_id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    existing_like = db.query(models.Like).filter(models.Like.post_id == post_id, models.Like.user_id == current_user.user_id).first()
+    if existing_like:
+        raise HTTPException(status_code=400, detail="Post already liked")
+    
+    new_like = models.Like(post_id=post_id, user_id=current_user.user_id)
+    db.add(new_like)
+    db.commit()
+    db.refresh(new_like)
+    return new_like
+
+@router.delete("/posts/{post_id}/like", response_model=schemas.LikeResponse)
+async def unlike_post(post_id: int, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Unlike a post."""
+    post = db.query(models.Post).filter(models.Post.post_id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    existing_like = db.query(models.Like).filter(models.Like.post_id == post_id, models.Like.user_id == current_user.user_id).first()
+    if existing_like is None:
+        raise HTTPException(status_code=400, detail="Post not liked yet")
+    
+    db.delete(existing_like)
+    db.commit()
+    return existing_like
+
+# Create Post Endpoint
+@router.post("/posts/", response_model=schemas.PostResponse)
+async def create_post(post: schemas.PostCreate, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Create a new post."""
+    new_post = models.Post(content=post.content, image=post.image, user_id=current_user.user_id)
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+    return new_post
+
+# Comment Routes
+@router.post("/posts/{post_id}/comments/", response_model=schemas.CommentResponse)
+async def create_comment(post_id: int, comment: schemas.CommentCreate, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Create a new comment on a post."""
+    new_comment = models.Comment(content=comment.content, post_id=post_id, user_id=current_user.user_id)
+    db.add(new_comment)
+    db.commit()
+    db.refresh(new_comment)
+    return new_comment
+
+@router.get("/posts/{post_id}/comments/", response_model=List[schemas.CommentResponse])
+async def get_comments(post_id: int, db: Session = Depends(get_db)):
+    """Get all comments for a specific post."""
+    comments = db.query(models.Comment).filter(models.Comment.post_id == post_id).all()
+    return comments
+
+@router.delete("/comments/{comment_id}", response_model=dict)
+async def delete_comment(comment_id: int, db: Session = Depends(get_db)):
+    """Delete a comment."""
+    comment = db.query(models.Comment).filter(models.Comment.comment_id == comment_id).first()
+    if comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    db.delete(comment)
+    db.commit()
+    return {"message": "Comment deleted successfully", "comment_id": comment_id}
+
+# Follow Routes
+@router.post("/users/{user_id}/follow", response_model=schemas.FollowResponse)
+async def follow_user(user_id: int, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Follow a user."""
+    if current_user.user_id == user_id:
+        raise HTTPException(status_code=400, detail="You cannot follow yourself.")
+    
+    user_to_follow = db.query(models.User).filter(models.User.user_id == user_id).first()
+    if user_to_follow is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    existing_follow = db.query(models.Follow).filter(models.Follow.follower_id == current_user.user_id, models.Follow.followed_id == user_id).first()
+    if existing_follow:
+        raise HTTPException(status_code=400, detail="You are already following this user.")
+    
+    new_follow = models.Follow(follower_id=current_user.user_id, followed_id=user_id)
+    db.add(new_follow)
+    db.commit()
+    db.refresh(new_follow)
+    return new_follow
+
+@router.delete("/users/{user_id}/unfollow", response_model=dict)
+async def unfollow_user(user_id: int, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Unfollow a user."""
+    follow = db.query(models.Follow).filter(models.Follow.follower_id == current_user.user_id, models.Follow.followed_id == user_id).first()
+    if follow is None:
+        raise HTTPException(status_code=404, detail="Follow relationship not found")
+    
+    db.delete(follow)
+    db.commit()
+    return {"message": "Unfollowed successfully", "user_id": user_id}
+
+# Favorite Routes
+@router.post("/posts/{post_id}/favorites/", response_model=schemas.FavoriteResponse)
+async def create_favorite(post_id: int, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Favorite a post."""
+    new_favorite = models.Favorite(post_id=post_id, user_id=current_user.user_id)
+    db.add(new_favorite)
+    db.commit()
+    db.refresh(new_favorite)
+    return new_favorite
+
+@router.get("/users/me/favorites/", response_model=List[schemas.FavoriteResponse])
+async def get_favorites(db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Get all favorites for the current user."""
+    favorites = db.query(models.Favorite).filter(models.Favorite.user_id == current_user.user_id).all()
+    return favorites
+
+@router.delete("/favorites/{favorite_id}", response_model=dict)
+async def delete_favorite(favorite_id: int, db: Session = Depends(get_db)):
+    """Delete a favorite."""
+    favorite = db.query(models.Favorite).filter(models.Favorite.favorite_id == favorite_id).first()
+    if favorite is None:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    db.delete(favorite)
+    db.commit()
+    return {"message": "Favorite deleted successfully", "favorite_id": favorite_id}
 
