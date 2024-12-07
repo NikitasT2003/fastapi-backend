@@ -22,8 +22,8 @@
   },
   "rewrites": [
     {
-      "source": "/api/auth/:path*",
-      "destination": "/api/auth/:path*"
+      "source": "/:path*",
+      "destination": "https://marketplace-henna-three.vercel.app/:path*"
     },
     {
       "source": "/api/:path*",
@@ -36,8 +36,13 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "backend/marketplace_app/main.py"
+      "src": "/api/(.*)",
+      "dest": "backend/marketplace_app/routes/api.py"
+    }
+,
+    {
+      "src": "/auth/(.*)",
+      "dest": "backend/marketplace_app/routes/authentication.py"
     }
   ]
 }
