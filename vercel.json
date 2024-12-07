@@ -20,11 +20,5 @@
       "destination": "my-app/main.py"
     }
   ],
-  "functions": {
-    "backend/marketplace_app/*.py": {
-      "memory": 128,
-      "maxDuration": 10
-    }
-  },
   "cleanUrls": true
 }
