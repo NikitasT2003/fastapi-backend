@@ -10,14 +10,14 @@
       "use": "@vercel/python"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "backend/marketplace_app/main.py"
+      "source": "/api/(.*)",
+      "destination": "backend/marketplace_app/main.py"
     },
     {
-      "src": "/(.*)",
-      "dest": "my-app/index.html"
+      "source": "/(.*)",
+      "destination": "my-app/main.py"
     }
   ],
   "functions": {
@@ -26,11 +26,5 @@
       "maxDuration": 10
     }
   },
-  "cleanUrls": true,
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    }
-  ]
+  "cleanUrls": true
 }
