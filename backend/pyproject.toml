@@ -2,7 +2,7 @@
 name = "markeplace-app"
 version = "0.1.0"
 description = ""
-authors = ["Nikitas Tsoumas tsoumasnikitas@gmail.com"]
+authors = ["Nikitas Tsoumas <tsoumasnikitas@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
