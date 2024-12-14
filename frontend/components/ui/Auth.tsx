@@ -28,9 +28,9 @@ export function Auth() {
       formData.append('username', username);
       formData.append('password', password);
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL 
+      const API_URL = process.env.NODE_ENV
 
-      const response = await fetch(`${API_URL}/login`, {
+      const response = await fetch(`${API_URL}/api/v1/login`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -59,9 +59,9 @@ export function Auth() {
   const handleSignup = async () => {
     try {
       const payload = { username, email, password, is_seller: isSeller }
-      const data = await apiRequest('/signup', 'POST', payload)
+      const data = await apiRequest('/api/v1/signup', 'POST', payload)
       alert(data.message || 'Signup successful')
-      if (router) { router.push('/login'); } // Redirect after successful signup
+      if (router) { router.push('/api/v1/login'); } // Redirect after successful signup
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

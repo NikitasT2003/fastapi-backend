@@ -3,14 +3,28 @@ const nextConfig = {
   rewrites: async () => {
     return [
       {
-        source: '/api/:path*',
+        source: "/api/v1/:path*",
         destination:
-          process.env.NEXT_PUBLIC_API_URL  === 'development'
-            ? 'http://127.0.0.1:3000/api/:path*'
-            : '/api/',
+          process.env.NODE_ENV === "development"
+            ? "http://127.0.0.1:8000/api/v1/:path*"
+            : "/api/v1",
       },
-    ]
+      {
+        source: "/docs",
+        destination:
+          process.env.NODE_ENV === "development"
+            ? "http://127.0.0.1:8000/api/py/docs"
+            : "/api/v1/docs",
+      },
+      {
+        source: "/openapi.json",
+        destination:
+          process.env.NODE_ENV === "development"
+            ? "http://127.0.0.1:8000/api/py/openapi.json"
+            : "/api/v1/openapi.json",
+      },
+    ];
   },
-}
+};
 
-export default nextConfig
+module.exports = nextConfig;
