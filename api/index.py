@@ -12,6 +12,7 @@ app = FastAPI(docs_url="/api/v1/docs", openapi_url="/api/v1/openapi.json", debug
 origins = [
     "http://localhost:8000",
     "http://localhost:3000",
+    "https://marketplace1-lac.vercel.app"
     # Add more origins here
 ]
 
