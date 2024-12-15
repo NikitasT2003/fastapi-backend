@@ -23,9 +23,13 @@ export async function apiRequest(endpoint: string, method: string, body?: any, c
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.detail || 'An error occurred');
+    let errorData;
+    try {
+      errorData = await response.json(); // Attempt to parse JSON
+    } catch {
+      errorData = null; // If parsing fails, set to null
+    }
+    throw new Error(errorData?.detail || 'An error occurred');
   }
-
-  return response.json();
+  
 }

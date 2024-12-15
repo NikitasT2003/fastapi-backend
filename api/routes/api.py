@@ -16,6 +16,7 @@ from unique_id import generate_random_id
 from models import User
 from schemas import  UserCreate , UserResponse , Token
 import schemas
+import models
 router = APIRouter()
 
 
