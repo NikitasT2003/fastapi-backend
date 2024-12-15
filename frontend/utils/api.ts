@@ -1,5 +1,14 @@
-export async function apiRequest(endpoint: string, method: string, body?: any, contentType: 'json' | 'form' = 'json') {
+export async function apiRequest<T>(
+  endpoint: string,
+  method: string,
+  body?: any,
+  contentType: 'json' | 'form' = 'json'
+): Promise<T> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  if (!baseUrl) {
+    throw new Error('NEXT_PUBLIC_API_URL is not defined');
+  }
 
   let headers: HeadersInit = {
     'Accept': 'application/json',
@@ -12,7 +21,6 @@ export async function apiRequest(endpoint: string, method: string, body?: any, c
     bodyContent = JSON.stringify(body);
   } else if (contentType === 'form') {
     headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    // Converts the body object into URL-encoded format
     bodyContent = new URLSearchParams(body).toString();
   }
 
@@ -31,5 +39,10 @@ export async function apiRequest(endpoint: string, method: string, body?: any, c
     }
     throw new Error(errorData?.detail || 'An error occurred');
   }
-  
+
+  try {
+    return await response.json(); // Return the parsed JSON
+  } catch {
+    throw new Error('Failed to parse JSON response');
+  }
 }
