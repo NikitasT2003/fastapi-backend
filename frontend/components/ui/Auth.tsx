@@ -20,31 +20,20 @@ export function Auth() {
   const [showPassword, setShowPassword] = useState(false);
 
   const toggleAuthMode = () => setIsLogin(!isLogin)
-
   const handleLogin = async () => {
     try {
-      const formData = new URLSearchParams();
-      formData.append('grant_type', 'password');
-      formData.append('username', username);
-      formData.append('password', password);
-
-      const API_URL = process.env.NODE_ENV
-
-      const response = await fetch(`${API_URL}/api/v1/login`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData.toString(),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Login failed');
-      }
-
+      const payload = {
+        grant_type: 'password',   // Required grant type
+        username,                 // Username input
+        password,                 // Password input
+        scope: '',                // Optional, leave empty if not required
+        client_id: '',            // Optional, leave empty if not required
+        client_secret: '',        // Optional, leave empty if not required
+      };
+  
+      // Send the login request as 'application/x-www-form-urlencoded'
+      const data = await apiRequest('/api/v1/login', 'POST', payload, 'form');
+  
       alert(data.message || 'Login successful');
       if (router) { router.push('/home'); } // Redirect after successful login
     } catch (err) {
@@ -61,7 +50,7 @@ export function Auth() {
       const payload = { username, email, password, is_seller: isSeller }
       const data = await apiRequest('/api/v1/signup', 'POST', payload)
       alert(data.message || 'Signup successful')
-      if (router) { router.push('/api/v1/login'); } // Redirect after successful signup
+      if (router) { router.push('/auth'); } // Redirect after successful signup
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

@@ -517,3 +517,4 @@ uvicorn==0.32.1 ; python_full_version == "3.12.8" \
 passlib ==1.7.4 ; python_full_version == "3.12.8" \
 pyjwt == 2.10.1 ; python_full_version == "3.12.8" \
 python-multipart == 0.0.19 ; python_full_version == "3.12.8" \
+bcrypt == 4.2.1 python_full_version == "3.12.8" \

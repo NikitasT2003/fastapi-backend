@@ -5,26 +5,27 @@ const nextConfig = {
       {
         source: "/api/v1/:path*",
         destination:
-          process.env.NODE_ENV === "development"
+          process.env.NEXT_PUBLIC_API_URL === "development"
             ? "http://127.0.0.1:8000/api/v1/:path*"
             : "/api/v1",
       },
       {
         source: "/docs",
         destination:
-          process.env.NODE_ENV === "development"
-            ? "http://127.0.0.1:8000/api/py/docs"
+          process.env.NEXT_PUBLIC_API_URL === "development"
+            ? "http://127.0.0.1:8000/api/v1/docs"
             : "/api/v1/docs",
       },
       {
         source: "/openapi.json",
         destination:
-          process.env.NODE_ENV === "development"
-            ? "http://127.0.0.1:8000/api/py/openapi.json"
+          process.env.NEXT_PUBLIC_API_URL === "development"
+            ? "http://127.0.0.1:8000/api/v1/openapi.json"
             : "/api/v1/openapi.json",
       },
+      
     ];
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
