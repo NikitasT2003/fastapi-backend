@@ -312,4 +312,3 @@ async def delete_favorite(favorite_id: int, db: Session = Depends(get_db)):
     db.delete(favorite)
     db.commit()
     return {"message": "Favorite deleted successfully", "favorite_id": favorite_id}
-

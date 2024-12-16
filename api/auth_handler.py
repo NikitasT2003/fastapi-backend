@@ -97,5 +97,3 @@ def admin_required(current_user: User = Depends(get_current_user)):
             detail="Admin access required."
         )
     return current_user
-
-
