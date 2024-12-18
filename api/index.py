@@ -4,10 +4,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
-from routes import api
+from routes import endpoints
 
 
-app = FastAPI(docs_url="/api/v1/docs", openapi_url="/api/v1/openapi.json", debug=True)
+app = FastAPI(docs_url="/api/docs", openapi_url="/api/openapi.json", debug=True)
 
 origins = [
     "http://localhost:8000",
@@ -24,7 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api.router , prefix = "/api/v1")
+app.include_router(endpoints.router , prefix = "/api")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

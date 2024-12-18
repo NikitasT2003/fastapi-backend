@@ -32,7 +32,7 @@ export function Auth() {
       };
   
       // Send the login request as 'application/x-www-form-urlencoded'
-      const data = await apiRequest('/api/v1/login', 'POST', payload, 'form');
+      const data = await apiRequest('/api/login', 'POST', payload, 'form');
   
       alert('Login successful');
       if (router) { router.push('/home'); } // Redirect after successful login
@@ -48,7 +48,7 @@ export function Auth() {
   const handleSignup = async () => {
     try {
       const payload = { username, email, password, is_seller: isSeller }
-      const data = await apiRequest('/api/v1/signup', 'POST', payload)
+      const data = await apiRequest('/api/signup', 'POST', payload)
       alert('Signup successful')
       if (router) { router.push('/auth'); } // Redirect after successful signup
     } catch (err) {
