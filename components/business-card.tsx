@@ -21,15 +21,15 @@ export function BusinessCard({ business, onLikeAction, onFavoriteAction, onMessa
 
   const handleLike = () => {
     setIsLiked(!isLiked)
-    onLikeAction(business.id)
+    onLikeAction(String(business.listing_id))
   }
 
   const handleFavorite = () => {
-    onFavoriteAction(business.id)
+    onFavoriteAction(String(business.listing_id))
   }
 
   const handleMessage = () => {
-    onMessageAction(business.seller.user_id)
+    onMessageAction(String(business.seller_id))
   }
 
   return (
@@ -37,9 +37,9 @@ export function BusinessCard({ business, onLikeAction, onFavoriteAction, onMessa
       <CardHeader className="p-0">
         <div className="relative h-48">
           <Image
-            src={business.banner}
+            src={business.banner || '/path/to/default/image.jpg'}
             alt={`${business.title} banner`}
-            layout="fill"
+            layout="fill" 
             objectFit="cover"
           />
         </div>
@@ -48,7 +48,10 @@ export function BusinessCard({ business, onLikeAction, onFavoriteAction, onMessa
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-4">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={business.logo} alt={business.title} />
+              <AvatarImage 
+                src={business.logo || '/path/to/default/logo.jpg'}
+                alt={business.title} 
+              />
               <AvatarFallback>{business.title.charAt(0)}</AvatarFallback>
             </Avatar>
             <div>

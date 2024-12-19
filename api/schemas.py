@@ -6,15 +6,19 @@ from datetime import datetime
 class UserBase(BaseModel):
     username: str
     email: EmailStr
-    is_seller: bool
-    is_admin: Optional[bool] = None
+    name: str
     profile_picture: Optional[str] = None
+    description: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
+    is_seller: bool
+    is_admin: bool
 
 class UserResponse(UserBase):
     user_id: int
+    is_seller: bool
+
     created_at: datetime
 
     class Config:
@@ -26,12 +30,15 @@ class BusinessBase(BaseModel):
     description: str
     price: int
     industry: Optional[List[str]] = None
+    logo: Optional[str] = None
+    banner: Optional[str] = None
 
 class BusinessCreate(BusinessBase):
     seller_id: int
 
 class BusinessResponse(BusinessBase):
     listing_id: int
+    seller_id: int
     created_at: datetime
 
     class Config:
@@ -47,6 +54,7 @@ class PostCreate(PostBase):
 
 class PostResponse(PostBase):
     post_id: int
+    user_id: int
     created_at: datetime
     likes: List['LikeResponse'] = []  # Include likes if needed
 
@@ -121,3 +129,6 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: Optional[str] = None
     
+
+class UserInDB(UserResponse):
+    hashed_password: str

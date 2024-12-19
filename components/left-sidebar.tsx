@@ -7,15 +7,10 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
+import { UserDisplay } from '@/types/UserDisplay';
 
 interface LeftSidebarProps {
-  user: {
-    name: string;
-    avatar: string;
-    username: string;
-    description?: string;
-    joinDate?: string;
-  };
+  user: UserDisplay | null;
 }
 
 export function LeftSidebar({ user }: LeftSidebarProps) {
@@ -25,26 +20,26 @@ export function LeftSidebar({ user }: LeftSidebarProps) {
         <HoverCardTrigger asChild>
           <div className="flex items-center space-x-2 mb-6 cursor-pointer">
             <Avatar>
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={user?.profile_picture} alt={user?.name} />
+              <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium">@{user.username}</span>
+            <span className="text-sm font-medium">@{user?.username}</span>
           </div>
         </HoverCardTrigger>
         <HoverCardContent className="w-80">
           <div className="flex justify-between space-x-4">
             <Avatar>
-              <AvatarImage src={user.avatar} />
-              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={user?.profile_picture} />
+              <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="space-y-1">
-              <h4 className="text-sm font-semibold">@{user.username}</h4>
+              <h4 className="text-sm font-semibold">@{user?.username}</h4>
               <p className="text-sm text-muted-foreground">
-                {user.description || "No description provided."}
+                {user?.description || "No description provided."}
               </p>
               <div className="flex items-center pt-2">
                 <span className="text-xs text-muted-foreground">
-                  Joined {user.joinDate || "January 2024"}
+                  Joined {user?.created_at ? new Date(user.created_at).toLocaleDateString() : "Unknown date"}
                 </span>
               </div>
             </div>

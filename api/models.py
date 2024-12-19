@@ -13,10 +13,12 @@ class User(Base):
     username = Column(String(50), nullable=False, unique=True)
     email = Column(String(100), nullable=False, unique=True)
     password = Column(String(255), nullable=False)
+    name = Column(String(100), nullable=False)
     is_seller = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
     profile_picture = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    description = Column(String(255), nullable=True)
     
     # Relationships
     listings = relationship('Business', back_populates='seller', cascade="all, delete-orphan")
@@ -38,6 +40,9 @@ class Business(Base):
     industry = Column(ARRAY(String), nullable=True)
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
     seller_id = Column(Integer, ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False)
+    logo = Column(String(255), nullable=True)  # URL for the business logo
+    banner = Column(String(255), nullable=True)  # URL for the business banner
+
     # Relationships
     seller = relationship('User', back_populates='listings')
 

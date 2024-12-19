@@ -9,14 +9,14 @@ from schemas import TokenData
 from models import User
 from database import get_db
 
-# to get a string like this run:
-# openssl rand -hex 32
+
 SECRET_KEY = "d2192d5e10374bc755f11f67282dcdd251e178d165ccb9aaec9e4b3a3e733710"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 router = APIRouter()
 
@@ -34,24 +34,11 @@ def get_user(db: Session, username: str):
 
 
 def authenticate_user(db: Session, username: str, password: str):
-    print(f"Attempting to authenticate user: {username}")
-    user = db.query(User).filter(User.username == username).first()
+    user = get_user(db, username)
     if not user:
-        print("User not found")
         return False
-    
-    print(f"Found user: {user.username}")
-    print(f"Stored hashed password: {user.password}")
-    print(f"Attempting to verify password...")
-    
-    is_valid = verify_password(password, user.password)
-    print(f"Password verification result: {is_valid}")
-    
-    if not is_valid:
-        print("Invalid password")
+    if not verify_password(password, user.hashed_password):
         return False
-    
-    print("Authentication successful")
     return user
 
 
@@ -88,12 +75,4 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    return current_user
-
-def admin_required(current_user: User = Depends(get_current_user)):
-    if not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required."
-        )
     return current_user

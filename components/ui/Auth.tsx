@@ -18,8 +18,10 @@ export function Auth() {
   const [isSeller, setIsSeller] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false);
-
+  const [name, setName] = useState('')
+  
   const toggleAuthMode = () => setIsLogin(!isLogin)
+
   const handleLogin = async () => {
     try {
       const payload = {
@@ -47,7 +49,7 @@ export function Auth() {
 
   const handleSignup = async () => {
     try {
-      const payload = { username, email, password, is_seller: isSeller }
+      const payload = { name,username, email, password, is_seller: isSeller }
       const data = await apiRequest('/api/signup', 'POST', payload)
       alert('Signup successful')
       if (router) { router.push('/auth'); } // Redirect after successful signup
@@ -78,6 +80,17 @@ export function Auth() {
         <CardContent>
           {error && <p className="text-red-500">{error}</p>}
           <form onSubmit={handleSubmit}>
+            {!isLogin && (
+              <div className="mb-4">
+                <Input
+                  type="text"
+                  placeholder="Full Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+            )}
             <div className="mb-4">
               <Input
                 type="text"

@@ -13,58 +13,57 @@ from auth_handler import (
 )
 from database import get_db
 from unique_id import generate_random_id
-from models import User
+from models import User, Like, Follow
 from schemas import  UserCreate , UserResponse , Token
 import schemas
 import models
-router = APIRouter()
+from follow_suggestions import get_follow_suggestions
+import follow_suggestions
 
+router = APIRouter()
 
 @router.post("/signup", response_model=UserResponse)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    # Ensure that the name is provided
+    if not user.name:
+        raise HTTPException(status_code=400, detail="Name is required")
+
+    db_user = db.query(User).filter(User.username == user.username).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already registered.")
     
-        db_user = db.query(User).filter(User.username == user.username).first()
-        if db_user:
-            raise HTTPException(status_code=400, detail="Username already registered.")
-        
-        hashed_password = get_password_hash(user.password)
-        new_user = User(
-            username=user.username,
-            email=user.email,
-            password=hashed_password,
-            is_seller=user.is_seller,
-            is_admin = user.is_admin
-        )
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-        return new_user
-
-
+    hashed_password = get_password_hash(user.password)
+    new_user = User(
+        username=user.username,
+        email=user.email,
+        password=hashed_password,
+        name=user.name,
+        is_seller=user.is_seller,
+        is_admin = user.is_admin
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(
         form_data: OAuth2PasswordRequestForm = Depends(),
         db: Session = Depends(get_db)
 ) -> Token:
-    print("Starting login process...")
-    
     user = authenticate_user(db, form_data.username, form_data.password)
-    print(f"Authentication result: {user}")
-    
     if not user:
-        print("Authentication failed")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
+    return Token(access_token=access_token, token_type="bearer")
+
     
     
     return {"access_token": access_token, "token_type": "bearer"}
@@ -312,3 +311,23 @@ async def delete_favorite(favorite_id: int, db: Session = Depends(get_db)):
     db.delete(favorite)
     db.commit()
     return {"message": "Favorite deleted successfully", "favorite_id": favorite_id}
+
+@router.get("/posts/", response_model=List[schemas.PostResponse])
+async def get_posts(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    """Get paginated posts."""
+    posts = db.query(models.Post).offset(skip).limit(limit).all()
+    total_posts = db.query(models.Post).count()  # Get total count of posts
+    next_page = skip + limit if skip + limit < total_posts else None  # Calculate next page
+
+    return {
+        "items": posts,
+        "nextPage": next_page,  # Return next page number or None
+    }
+
+@router.get("/users/suggestions/", response_model=List[UserResponse])
+async def get_user_suggestions(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Get user follow suggestions based on collaborative filtering.
+    """
+    suggestions = get_follow_suggestions(current_user.user_id, db)
+    return suggestions
