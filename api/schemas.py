@@ -18,7 +18,6 @@ class UserCreate(UserBase):
 class UserResponse(UserBase):
     user_id: int
     is_seller: bool
-
     created_at: datetime
 
     class Config:
