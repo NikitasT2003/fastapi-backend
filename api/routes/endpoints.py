@@ -14,7 +14,7 @@ from auth_handler import (
 from database import get_db
 from unique_id import generate_random_id
 from models import User, Like, Follow
-from schemas import  UserCreate , UserResponse , Token
+from schemas import  UserCreate , UserResponse , Token, PostCreate, CommentCreate, CommentResponse
 import schemas
 import models
 from follow_suggestions import get_follow_suggestions
@@ -68,9 +68,6 @@ async def login_for_access_token(
     )
     return Token(access_token=access_token, token_type="bearer")
 
-    
-    
-    return {"access_token": access_token, "token_type": "bearer"}
 
 # ROOT ROUTE 
 @router.get("/")
@@ -282,13 +279,15 @@ async def follow_user(user_id: int, db: Session = Depends(get_db), current_user:
 @router.delete("/users/{user_id}/unfollow", response_model=dict)
 async def unfollow_user(user_id: int, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
     """Unfollow a user."""
-    follow = db.query(models.Follow).filter(models.Follow.follower_id == current_user.user_id, models.Follow.followed_id == user_id).first()
+    if current_user.user_id == user_id:
+        raise HTTPException(status_code=400, detail="You cannot unfollow yourself.")
+    
+    follow = db.query(Follow).filter(Follow.follower_id == current_user.user_id, Follow.followed_id == user_id).first()
     if follow is None:
         raise HTTPException(status_code=404, detail="Follow relationship not found")
     
     db.delete(follow)
     db.commit()
-    return {"message": "Unfollowed successfully", "user_id": user_id}
 
 # Favorite Routes
 @router.post("/posts/{post_id}/favorites/", response_model=schemas.FavoriteResponse)
@@ -335,3 +334,32 @@ async def get_user_suggestions(current_user: User = Depends(get_current_user), d
     """
     suggestions = get_follow_suggestions(current_user.user_id, db)
     return suggestions
+
+# Update Post Endpoint
+@router.put("/posts/{post_id}", response_model=schemas.PostResponse)
+async def update_post(post_id: int, post: PostCreate, db: Session = Depends(get_db)):
+    """Update a post."""
+    db_post = db.query(models.Post).filter(models.Post.post_id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    # Update post details
+    db_post.content = post.content
+    db_post.image = post.image
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+# Update Comment Endpoint
+@router.put("/comments/{comment_id}", response_model=CommentResponse)
+async def update_comment(comment_id: int, comment: CommentCreate, db: Session = Depends(get_db)):
+    """Update a comment."""
+    db_comment = db.query(models.Comment).filter(models.Comment.comment_id == comment_id).first()
+    if db_comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    
+    # Update comment details
+    db_comment.content = comment.content
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment

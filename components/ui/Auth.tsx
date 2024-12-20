@@ -5,12 +5,13 @@ import { useRouter } from 'next/compat/router'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { apiRequest } from '@/utils/api'
+import { useStore } from '@/store'
 import { signIn } from 'next-auth/react'
 import { EyeOff, Eye } from 'react-feather';
 
 export function Auth() {
   const router = useRouter();
+  const { registerUser, loginUser } = useStore();
   const [isLogin, setIsLogin] = useState(true)
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
@@ -24,20 +25,9 @@ export function Auth() {
 
   const handleLogin = async () => {
     try {
-      const payload = {
-        grant_type: 'password',   // Required grant type
-        username,                 // Username input
-        password,                 // Password input
-        scope: '',                // Optional, leave empty if not required
-        client_id: '',            // Optional, leave empty if not required
-        client_secret: '',        // Optional, leave empty if not required
-      };
-  
-      // Send the login request as 'application/x-www-form-urlencoded'
-      const data = await apiRequest('/api/login', 'POST', payload, 'form');
-  
+      await loginUser(username, password);
       alert('Login successful');
-      if (router) { router.push('/home'); } // Redirect after successful login
+      if (router) { router.push('/browse'); }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -49,10 +39,17 @@ export function Auth() {
 
   const handleSignup = async () => {
     try {
-      const payload = { name,username, email, password, is_seller: isSeller }
-      const data = await apiRequest('/api/signup', 'POST', payload)
-      alert('Signup successful')
-      if (router) { router.push('/auth'); } // Redirect after successful signup
+      const payload = { 
+        name, 
+        username, 
+        email, 
+        password, 
+        is_seller: isSeller, 
+        is_admin: false
+      }
+      await registerUser(payload);
+      alert('Signup successful');
+      
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
