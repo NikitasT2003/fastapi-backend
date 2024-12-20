@@ -1,29 +1,28 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useStore } from '@/store'; // Import the store
 import { apiRequest } from '@/utils/api'; // Ensure this import is correct
 import { BusinessCard } from '@/components/business-card';
 import { PostCard } from '@/components/post-card';
 import { CreatePostPlaceholder } from '@/components/create-post-placeholder';
 import { FollowSuggestions } from '@/components/follow-suggestions';
-import { Business } from '@/types/business';
-import { Post, PostResponse } from '@/types/posts';
-import { UserDisplay } from '@/types/UserDisplay';
-import { Suggestion } from '@/types/Suggestion';
+
 import { BusinessValueDrawer } from '@/components/business-value-drawer';
 import { LeftSidebar } from '@/components/left-sidebar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { User } from 'next-auth';
-import { Users } from '@/types/Users';
+
 
 export function Browse() {
+  const { fetchPosts, fetchFollowSuggestions, fetchBusinesses, followSuggestions, businesses, posts } = useStore(); // Use the store functions
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [followSuggestions, setFollowSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [budgetRange, setBudgetRange] = useState<number[]>([0, 100]);
+  const [currentPage, setCurrentPage] = useState(1); // Track the current page
+  const [totalPages, setTotalPages] = useState(0); // Track total pages
 
   // Function to fetch current user data
   const fetchCurrentUser = async () => {
@@ -35,54 +34,22 @@ export function Browse() {
     }
   };
 
-  // Function to fetch follow suggestions
-  const fetchFollowSuggestions = async () => {
+  // Function to fetch posts based on the current page
+  const loadPosts = async (page: number) => {
     try {
-      const users = await apiRequest<Users[]>('/users/suggestions/', 'GET');
-      const suggestions: Suggestion[] = users.map(user => ({
-        id: String(user.user_id),
-        name: user.username,
-        avatar: user.profile_picture || '/placeholder.svg',
-        username: user.username,
-      }));
-      setFollowSuggestions(suggestions);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('An unknown error occurred');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Function to fetch posts
-  const fetchPosts = async ({ pageParam = 0 }) => {
-    try {
-      const response = await apiRequest<PostResponse>(`/posts?skip=${pageParam}&limit=10`, 'GET');
-      return response; // Return the entire response
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('An unknown error occurred');
-      }
+      const response = await fetchPosts(page); // Fetch posts for the current page
+      setTotalPages(response.totalPages); // Assuming the response contains total pages
+    } catch (error) {
+      console.error("Error fetching posts:", error);
     }
   };
 
   useEffect(() => {
     fetchCurrentUser(); // Fetch current user on mount
     fetchFollowSuggestions(); // Fetch follow suggestions on mount
-  }, []);
-
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery<PostResponse, unknown>(
-    ['posts'],
-    fetchPosts,
-    {
-      getNextPageParam: (lastPage) => lastPage.nextPage,
-    }
-  );
+    loadPosts(currentPage); // Fetch posts for the initial page
+    fetchBusinesses(); // Fetch businesses on mount
+  }, [currentPage]); // Re-fetch posts when currentPage changes
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -115,36 +82,21 @@ export function Browse() {
           />
 
           <div className="space-y-6 mt-6">
-            {data.pages.map((page, i) => (
-              <React.Fragment key={i}>
-                {page.items.map((item: Post) => (
-                  'author' in item ? (
-                    <PostCard
-                      key={item.id}
-                      post={item}
-                      onLike={handleLike}
-                      onComment={handleComment}
-                      onShare={handleShare}
-                    />
-                  ) : (
-                    <BusinessCard
-                      key={item.id}
-                      business={item}
-                      onClick={handleBusinessClick}
-                    />
-                  )
-                ))}
-              </React.Fragment>
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onLike={handleLike}
+                onComment={handleComment}
+                onShare={handleShare}
+              />
             ))}
-            <div className="mt-8 text-center">
-              {isFetchingNextPage ? (
-                <p>Loading more...</p>
-              ) : hasNextPage ? (
-                <Button onClick={() => fetchNextPage()}>Load More</Button>
-              ) : (
-                <p>No more posts to load.</p>
-              )}
-            </div>
+          </div>
+
+          <div className="mt-8 text-center">
+            {currentPage < totalPages && ( // Show Load More button if there are more pages
+              <Button onClick={() => setCurrentPage(currentPage + 1)}>Load More</Button>
+            )}
           </div>
         </div>
       </main>

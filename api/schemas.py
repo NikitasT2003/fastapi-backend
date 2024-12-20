@@ -31,6 +31,7 @@ class BusinessBase(BaseModel):
     industry: Union[List[str], None] = None
     logo: Union[str, None] = None
     banner: Union[str, None] = None
+
 class BusinessCreate(BusinessBase):
     seller_id: int
 
@@ -54,7 +55,7 @@ class PostResponse(PostBase):
     post_id: int
     user_id: int
     created_at: datetime
-    likes: Union[List[LikeResponse], None] = None  # Include likes if needed
+    likes: Union[List['LikeResponse'], None] = None  # Ensure 'LikeResponse' is defined
 
     class Config:
         from_attributes = True
@@ -126,7 +127,6 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Union[str, None] = None
-    
 
 class UserInDB(UserResponse):
     hashed_password: str

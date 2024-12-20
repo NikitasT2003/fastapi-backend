@@ -315,7 +315,7 @@ async def delete_favorite(favorite_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Favorite deleted successfully", "favorite_id": favorite_id}
 
-@router.get("/posts/", response_model=List[schemas.PostResponse])
+@router.get("/posts/", response_model=dict)
 async def get_posts(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     """Get paginated posts."""
     posts = db.query(models.Post).offset(skip).limit(limit).all()
@@ -324,6 +324,7 @@ async def get_posts(skip: int = 0, limit: int = 10, db: Session = Depends(get_db
 
     return {
         "items": posts,
+        "totalPosts": total_posts,  # Return total number of posts
         "nextPage": next_page,  # Return next page number or None
     }
 
