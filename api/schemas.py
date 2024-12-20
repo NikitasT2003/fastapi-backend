@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from typing import Union, List
 from datetime import datetime
 
 # User Schemas
@@ -7,8 +7,8 @@ class UserBase(BaseModel):
     username: str
     email: EmailStr
     name: str
-    profile_picture: Optional[str] = None
-    description: Optional[str] = None
+    profile_picture: Union[str, None] = None
+    description: Union[str, None] = None
 
 class UserCreate(UserBase):
     password: str
@@ -28,10 +28,9 @@ class BusinessBase(BaseModel):
     title: str
     description: str
     price: int
-    industry: Optional[List[str]] = None
-    logo: Optional[str] = None
-    banner: Optional[str] = None
-
+    industry: Union[List[str], None] = None
+    logo: Union[str, None] = None
+    banner: Union[str, None] = None
 class BusinessCreate(BusinessBase):
     seller_id: int
 
@@ -46,7 +45,7 @@ class BusinessResponse(BusinessBase):
 # Post Schemas
 class PostBase(BaseModel):
     content: str
-    image: Optional[str] = None
+    image: Union[str, None] = None
 
 class PostCreate(PostBase):
     user_id: int
@@ -55,7 +54,7 @@ class PostResponse(PostBase):
     post_id: int
     user_id: int
     created_at: datetime
-    likes: List['LikeResponse'] = []  # Include likes if needed
+    likes: Union[List[LikeResponse], None] = None  # Include likes if needed
 
     class Config:
         from_attributes = True
@@ -126,7 +125,7 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel):
-    username: Optional[str] = None
+    username: Union[str, None] = None
     
 
 class UserInDB(UserResponse):

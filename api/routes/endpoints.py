@@ -22,6 +22,10 @@ import follow_suggestions
 
 router = APIRouter()
 
+@router.post("/healthcheck", response_model=dict)
+async def healthcheck():
+    return {"status": "sucess", "message": "API is healthy"}
+
 @router.post("/signup", response_model=UserResponse)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     # Ensure that the name is provided

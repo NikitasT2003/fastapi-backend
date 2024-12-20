@@ -9,16 +9,10 @@ from routes import endpoints
 
 app = FastAPI(docs_url="/api/docs", openapi_url="/api/openapi.json", debug=True)
 
-origins = [
-    "http://localhost:8000",
-    "http://localhost:3000",
-    "https://marketplace1-lac.vercel.app"
-    # Add more origins here
-]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

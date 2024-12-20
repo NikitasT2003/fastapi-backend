@@ -38,3 +38,18 @@ next-env.d.ts
 .vercel
 .next
 .venv
+# Python
+*.log
+*.pyc
+__pycache__
+*.sqlite3
+
+# Environments
+
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
