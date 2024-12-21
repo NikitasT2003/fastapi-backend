@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 
-interface Suggestion {
+export type Suggestion = {
   id: string;
   name: string;
   username: string;
@@ -11,11 +11,15 @@ interface Suggestion {
 }
 
 interface FollowSuggestionsProps {
-  suggestions: Suggestion[];
+  suggestions: Suggestion[] | null;
   onFollow: (id: string) => void;
 }
 
 export function FollowSuggestions({ suggestions, onFollow }: FollowSuggestionsProps) {
+  if (!suggestions) {
+    return <p>No suggestions available.</p>;
+  }
+
   const limitedSuggestions = suggestions.slice(0, 5);
 
   return (

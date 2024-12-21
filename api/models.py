@@ -16,7 +16,7 @@ class User(Base):
     name = Column(String(100), nullable=False)
     is_seller = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
-    profile_picture = Column(String(255), nullable=True)
+    profile_picture = Column(String(255), nullable=True, unique=True)
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
     description = Column(String(255), nullable=True)
     
@@ -55,7 +55,8 @@ class Post(Base):
     image = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
     user_id = Column(Integer, ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False)
-    
+    author = Column(String(100), ForeignKey ('users.username', ondelete='CASCADE'), nullable=False)
+    avatar = Column(String(255), ForeignKey('users.profile_picture', ondelete='CASCADE'), nullable=True)
     # Relationships
     user = relationship('User', back_populates='posts')
     comments = relationship('Comment', back_populates='post', cascade="all, delete")
@@ -114,3 +115,19 @@ class Favorite(Base):
     # Relationships
     post = relationship('Post', back_populates='favorites')
     user = relationship('User', back_populates='favorites')
+
+
+class Share(Base):
+    __tablename__ = 'shares'
+    
+    share_id = Column(Integer, primary_key=True, autoincrement=True)
+    business_id = Column(Integer, ForeignKey('businesses.listing_id', ondelete='CASCADE'), nullable=False)
+    post_id = Column(Integer, ForeignKey('posts.post_id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
+
+    # Relationships
+    post = relationship('Post', back_populates='shares')
+    business = relationship('Business', back_populates='shares')
+    user = relationship('User', back_populates='shares')
+

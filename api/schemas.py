@@ -16,7 +16,8 @@ class UserCreate(UserBase):
     is_admin: bool
 
 class UserResponse(UserBase):
-    user_id: int
+    name: str
+    profile_picture: Union[str, None] = None
     is_seller: bool
     created_at: datetime
 
@@ -35,9 +36,9 @@ class BusinessBase(BaseModel):
 class BusinessCreate(BusinessBase):
     seller_id: int
 
-class BusinessResponse(BusinessBase):
-    listing_id: int
+class BusinessResponse(BusinessBase): 
     seller_id: int
+    title: str
     created_at: datetime
 
     class Config:
@@ -47,13 +48,11 @@ class BusinessResponse(BusinessBase):
 class PostBase(BaseModel):
     content: str
     image: Union[str, None] = None
-
+    author: str
 class PostCreate(PostBase):
     user_id: int
 
-class PostResponse(PostBase):
-    post_id: int
-    user_id: int
+class PostResponse(PostBase):   
     created_at: datetime
     likes: Union[List['LikeResponse'], None] = None  # Ensure 'LikeResponse' is defined
 
@@ -69,7 +68,6 @@ class CommentCreate(CommentBase):
     user_id: int
 
 class CommentResponse(CommentBase):
-    comment_id: int
     created_at: datetime
 
     class Config:
@@ -84,7 +82,6 @@ class FollowCreate(FollowBase):
     pass
 
 class FollowResponse(FollowBase):
-    follow_id: int
     created_at: datetime
 
     class Config:
@@ -99,7 +96,6 @@ class LikeCreate(LikeBase):
     pass
 
 class LikeResponse(LikeBase):
-    like_id: int
     created_at: datetime
 
     class Config:
@@ -114,11 +110,27 @@ class FavoriteCreate(FavoriteBase):
     pass
 
 class FavoriteResponse(FavoriteBase):
-    favorite_id: int
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class ShareBase(BaseModel):
+    post_id: Union[int, None] = None
+    business_id: Union[int, None] = None
+    user_id: int  
+
+class ShareCreate(ShareBase):
+    pass
+
+class ShareResponse(ShareBase):
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 
 # Token Schemas
 class Token(BaseModel):

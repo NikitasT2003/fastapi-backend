@@ -14,7 +14,7 @@ from auth_handler import (
 from database import get_db
 from unique_id import generate_random_id
 from models import User, Like, Follow
-from schemas import  UserCreate , UserResponse , Token, PostCreate, CommentCreate, CommentResponse
+from schemas import  UserCreate , UserResponse , Token, PostCreate, CommentCreate, CommentResponse, PostResponse, ShareCreate, ShareResponse
 import schemas
 import models
 from follow_suggestions import get_follow_suggestions
@@ -118,10 +118,16 @@ async def delete_user(user_id: int, db: Session = Depends(get_db)):
     return {"message": "User deleted successfully", "user_id": user_id}
 
 # BUSINESS ROUTES
-@router.get("/business/", response_model=List[schemas.BusinessResponse])
-async def get_businesses(db: Session = Depends(get_db)):
-    businesses = db.query(models.Business).all()
-    return businesses
+@router.get("/business/", response_model=dict)
+async def fetch_businesses(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    """Get paginated business listings."""
+    businesses = db.query(models.Business).offset(skip).limit(limit).all()
+    total_businesses = db.query(models.Business).count()  # Get total count of businesses
+
+    return {
+        "items": businesses,
+        "totalBusinesses": total_businesses,  # Return total number of businesses
+    }
 
 @router.post("/business/", response_model=schemas.BusinessResponse)
 async def create_business(business: schemas.BusinessCreate, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
@@ -315,7 +321,7 @@ async def delete_favorite(favorite_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Favorite deleted successfully", "favorite_id": favorite_id}
 
-@router.get("/posts/", response_model=dict)
+@router.get("/posts/", response_model=PostResponse)
 async def get_posts(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     """Get paginated posts."""
     posts = db.query(models.Post).offset(skip).limit(limit).all()
@@ -364,3 +370,51 @@ async def update_comment(comment_id: int, comment: CommentCreate, db: Session = 
     db.commit()
     db.refresh(db_comment)
     return db_comment
+
+@router.post("/posts/{post_id}/share", response_model=dict)
+async def share_post(post_id: int, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Share a post."""
+    post = db.query(models.Post).filter(models.Post.post_id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    # Create a new share entry
+    new_share = models.Share(post_id=post_id, user_id=current_user.user_id)
+    db.add(new_share)
+    db.commit()
+    db.refresh(new_share)
+
+    return {"message": "Post shared successfully", "post_id": post_id}
+
+
+@router.get("/posts/{post_id}/shares/", response_model=List[schemas.ShareResponse])
+async def get_shares(post_id: int, db: Session = Depends(get_db)):
+    """Get all shares for a specific post."""
+    shares = db.query(models.Share).filter(models.Share.post_id == post_id).all()
+    return shares
+
+
+
+@router.post("/posts/{post_id}/shares/", response_model=list[ShareResponse])
+async def create_share(post_id: int, share: ShareCreate, db: Session = Depends(get_db)):
+    """Create a new share."""
+    new_share = models.Share(post_id=post_id, **share.model_dump())
+    db.add(new_share)
+    db.commit()
+    db.refresh(new_share)
+    return new_share
+
+@router.get("/business/{listing_id}/shares/", response_model=list[ShareResponse])
+async def get_business_shares(listing_id: int, db: Session = Depends(get_db)):
+    """Get all shares for a specific business."""
+    shares = db.query(models.Share).filter(models.Share.business_id == listing_id).all()
+    return shares
+
+@router.post("/business/{listing_id}/shares/", response_model=list[ShareResponse])
+async def create_business_share(listing_id: int, share: ShareCreate, db: Session = Depends(get_db)):
+    """Create a new share for a specific business."""
+    new_share = models.Share(business_id=listing_id, **share.model_dump())
+    db.add(new_share)
+    db.commit()
+    db.refresh(new_share)
+    return new_share

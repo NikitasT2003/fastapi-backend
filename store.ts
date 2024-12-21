@@ -1,57 +1,59 @@
 import { create } from "zustand";
 
-type Users = {
-  user_id: number; // Unique identifier for the user
+export type Users = {
+  user_id: number; // User ID of the user
   username: string; // Username of the user
   email: string; // Email of the user
-  password: string; // Password of the user (hashed)
+  password: string; // Password of the user (hashed)s
   is_seller: boolean; // Indicates if the user is a seller
   is_admin: boolean; // Indicates if the user is an admin
   profile_picture?: string; // Optional profile picture URL
-  created_at: Date;
-  name: string;
-  description?: string;
-} 
-
-type Post = {
-  post_id: number;
-  content: string;
-  image?: string;
-  created_at: string;
-  user_id: number;
+  created_at: Date; // Date when the user was created
+  name: string; // Name of the user
+  description?: string; // Optional description of the user
 };
 
-type Business = {
-  listing_id: number; // Unique identifier for the business listing
-  title: string; // Title of the business
-  description: string; // Description of the business
-  price: number; // Price of the business listing
-  industry?: string[]; // Optional array of industries
-  created_at: Date; // Date when the business was created
-  seller_id: number; // ID of the user who is the seller
-  logo?: string; // Optional URL for the business logo
-  banner?: string; // Optional URL for the business banner
-}
-type Comment = {
-  comment_id: number; // Unique identifier for the comment
-  content: string; // Content of the comment
-  created_at: Date; // Date when the comment was created
-  post_id: number; // ID of the post the comment belongs to
-  user_id: number; // ID of the user who made the comment
-} 
+export type Post = {
+  post_id: string; // Ensure this matches your actual data type
+  content: string;
+  image: string;
+  avatar: string; // Add this line
+  author: string; // Ensure this is included
+  comments: number; // Ensure this is included
+  likes: number; // Ensure this is included
+  shares: number; // Ensure this is included
+  created_at: string; // Ensure this is included
+};
 
-type Follow = {
-  follow_id: number; // Unique identifier for the follow relationship
+export type Business = {
+  seller_id: number;
+  title: string;
+  description: string;
+  price: number;
+  industry?: string[];
+  created_at: Date;
+};
+
+export type Comment = {
+  content: string;
+  created_at: Date;
+};
+
+export  type Follow = {
   follower_id: number; // ID of the user who follows
   followed_id: number; // ID of the user being followed
-  created_at: Date; // Date when the follow relationship was created
-} 
-type Like = {
-  like_id: number; // Unique identifier for the like
+};
+
+export type Like = {
   post_id: number; // ID of the post that was liked
   user_id: number; // ID of the user who liked the post
-  created_at: Date; // Date when the like was created
-} 
+};
+
+type Favorite = {
+  post_id: number; // ID of the post that was favorited
+  user_id: number; // ID of the user who favorited the post
+};
+
 export interface Suggestion {
   id: string; // Ensure this is a string
   name: string; // Required name property
@@ -62,7 +64,7 @@ export interface Suggestion {
 
 type AuthStore = {
   currentUser: Users | null;
-  fetchCurrentUser: () => Promise<void>;
+  fetchCurrentUser: () => Promise<Users | null>;
   registerUser: (userData: Omit<Users, 'user_id' | 'created_at'> & { password: string }) => Promise<void>;
   loginUser: (username: string, password: string) => Promise<void>;
   posts: Post[];
@@ -70,7 +72,7 @@ type AuthStore = {
   followSuggestions: Suggestion[] | null;
   fetchFollowSuggestions: () => Promise<void>;
   businesses: Business[];
-  fetchBusinesses: () => Promise<void>;
+  fetchBusinesses: (pageParam?: number) => Promise<void>;
   comments: Comment[];
   fetchComments: (postId: number) => Promise<void>;
   likes: Like[];
@@ -89,6 +91,21 @@ type AuthStore = {
   deleteFavorite: (favoriteId: number) => Promise<{ message: string }>;
   updatePost: (postId: number, postData: Partial<Post>) => Promise<Post>;
   updateComment: (commentId: number, commentData: Partial<Comment>) => Promise<Comment>;
+  createComment: (postId: number, commentData: Omit<Comment, 'created_at'>) => Promise<Comment>;
+  createBusiness: (businessData: Omit<Business, 'created_at'>) => Promise<Business>;
+  fetchBusiness: (businessId: number) => Promise<Business>;
+  updateBusiness: (businessId: number, businessData: Partial<Business>) => Promise<Business>;
+  deleteBusiness: (businessId: number) => Promise<{ message: string }>;
+  likePost: (postId: number) => Promise<any>;
+  unlikePost: (postId: number) => Promise<any>;
+  fetchLikeCount: (postId: number) => Promise<number>;
+  fetchUserSuggestions: () => Promise<Suggestion[]>;
+  createShare: (postId: number) => Promise<any>;
+  fetchShares: (postId: number) => Promise<any>;
+  createBusinessShare: (listingId: number) => Promise<any>;
+  fetchBusinessShares: (listingId: number) => Promise<any>;
+  shares: any[];
+  businessShares: any[];
 };
 
 const URL = process.env.NEXT_PUBLIC_VERCEL_URL
@@ -99,14 +116,35 @@ export const useStore = create<AuthStore>((set) => ({
   currentUser: null,
   posts: [],
   followSuggestions: null,
+  businesses: [],
+  comments: [],
+  likes: [],
+  users: [],
+  shares: [],
+  businessShares: [],
+
+  fetchShares: async (postId: number) => {
+    try {
+      const response = await fetch(`${URL}/posts/${postId}/shares/`);
+      const data = await response.json();
+      set({ shares: data });
+    } catch (error) {
+      console.error("Error fetching shares:", error);
+    }
+  },
   
-  fetchCurrentUser: async () => {
+  fetchCurrentUser: async (): Promise<Users | null> => {
     try {
       const response = await fetch(`${URL}/users/me/`);
-      const user = await response.json();
+      if (!response.ok) {
+        throw new Error("Failed to fetch current user");
+      }
+      const user: Users = await response.json();
       set({ currentUser: user });
+      return user;
     } catch (error) {
       console.error("Error fetching current user:", error);
+      return null;
     }
   },
 
@@ -170,18 +208,17 @@ export const useStore = create<AuthStore>((set) => ({
     }
   },
 
-  businesses: [],
-  fetchBusinesses: async () => {
+  fetchBusinesses: async (pageParam = 0) => {
+    const skip = pageParam * 10; // Assuming 10 businesses per page
     try {
-      const response = await fetch(`${URL}/business/`);
-      const data = await response.json();
-      set({ businesses: data });
+        const response = await fetch(`${URL}/business?skip=${skip}&limit=10`);
+        const data = await response.json();
+        set({ businesses: data.items });
     } catch (error) {
-      console.error("Error fetching businesses:", error);
+        console.error("Error fetching businesses:", error);
     }
   },
   
-  comments: [],
   fetchComments: async (postId) => {
     try {
       const response = await fetch(`${URL}/posts/${postId}/comments/`);
@@ -192,7 +229,6 @@ export const useStore = create<AuthStore>((set) => ({
     }
   },
   
-  likes: [],
   fetchLikes: async (postId) => {
     try {
       const response = await fetch(`${URL}/posts/${postId}/likes/count`);
@@ -203,7 +239,6 @@ export const useStore = create<AuthStore>((set) => ({
     }
   },
 
-  users: [],
   fetchUsers: async () => {
     try {
       const response = await fetch(`${URL}/user/`);
@@ -397,6 +432,195 @@ export const useStore = create<AuthStore>((set) => ({
       return updatedComment; // Return updated comment data
     } catch (error) {
       console.error("Error updating comment:", error);
+    }
+  },
+
+  createComment: async (postId, commentData) => {
+    try {
+      const response = await fetch(`${URL}/posts/${postId}/comments/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(commentData),
+      });
+      if (!response.ok) {
+        throw new Error("Comment creation failed");
+      }
+      const newComment = await response.json();
+      return newComment; // Return created comment data
+    } catch (error) {
+      console.error("Error creating comment:", error);
+    }
+  },
+
+  createBusiness: async (businessData) => {
+    try {
+      const response = await fetch(`${URL}/business/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(businessData),
+      });
+      if (!response.ok) {
+        throw new Error("Business creation failed");
+      }
+      const newBusiness = await response.json();
+      return newBusiness; // Return created business data
+    } catch (error) {
+      console.error("Error creating business:", error);
+    }
+  },
+
+  fetchBusiness: async (businessId) => {
+    try {
+      const response = await fetch(`${URL}/business/${businessId}`);
+      if (!response.ok) {
+        throw new Error("Business not found");
+      }
+      const business = await response.json();
+      return business; // Return business data
+    } catch (error) {
+      console.error("Error fetching business:", error);
+    }
+  },
+
+  updateBusiness: async (businessId, businessData) => {
+    try {
+      const response = await fetch(`${URL}/business/${businessId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(businessData),
+      });
+      if (!response.ok) {
+        throw new Error("Update business failed");
+      }
+      const updatedBusiness = await response.json();
+      return updatedBusiness; // Return updated business data
+    } catch (error) {
+      console.error("Error updating business:", error);
+    }
+  },
+
+  deleteBusiness: async (businessId) => {
+    try {
+      const response = await fetch(`${URL}/business/${businessId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error("Delete business failed");
+      }
+      return { message: "Business deleted successfully" }; // Return success message
+    } catch (error) {
+      console.error("Error deleting business:", error);
+      return { message: "Delete failed" }; // Return a default message or handle the error appropriately
+    }
+  },
+
+  likePost: async (postId) => {
+    try {
+      const response = await fetch(`${URL}/posts/${postId}/like`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        throw new Error("Like failed");
+      }
+      const likeData = await response.json();
+      return likeData; // Return like data
+    } catch (error) {
+      console.error("Error liking post:", error);
+    }
+  },
+
+  unlikePost: async (postId) => {
+    try {
+      const response = await fetch(`${URL}/posts/${postId}/like`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error("Unlike failed");
+      }
+      const unlikeData = await response.json();
+      return unlikeData; // Return unlike data
+    } catch (error) {
+      console.error("Error unliking post:", error);
+    }
+  },
+
+  fetchLikeCount: async (postId) => {
+    try {
+      const response = await fetch(`${URL}/posts/${postId}/likes/count`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch like count");
+      }
+      const likeCount = await response.json();
+      return likeCount; // Return like count
+    } catch (error) {
+      console.error("Error fetching like count:", error);
+    }
+  },
+
+  fetchUserSuggestions: async () => {
+    try {
+      const response = await fetch(`${URL}/users/suggestions/`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch user suggestions");
+      }
+      const suggestions = await response.json();
+      return suggestions; // Return user suggestions
+    } catch (error) {
+      console.error("Error fetching user suggestions:", error);
+    }
+  },
+
+  createShare: async (postId: number) => {
+    try {
+      const response = await fetch(`${URL}/posts/${postId}/shares/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}), // Add any necessary share data here
+      });
+      if (!response.ok) {
+        throw new Error("Failed to create share");
+      }
+      const newShare = await response.json();
+      return newShare; // Return the created share
+    } catch (error) {
+      console.error("Error creating share:", error);
+    }
+  },
+
+  createBusinessShare: async (listingId: number) => {
+    try {
+      const response = await fetch(`${URL}/business/${listingId}/shares/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}), // Add any necessary share data here
+      });
+      if (!response.ok) {
+        throw new Error("Failed to create business share");
+      }
+      const newShare = await response.json();
+      return newShare; // Return the created business share
+    } catch (error) {
+      console.error("Error creating business share:", error);
+    }
+  },
+
+  fetchBusinessShares: async (listingId: number) => {
+    try {
+      const response = await fetch(`${URL}/business/${listingId}/shares/`);
+      const data = await response.json();
+      set({ businessShares: data }); // Assuming you want to store business shares in the state
+    } catch (error) {
+      console.error("Error fetching business shares:", error);
     }
   },
 }));
