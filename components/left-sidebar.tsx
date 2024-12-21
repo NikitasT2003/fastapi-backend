@@ -1,19 +1,32 @@
 import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Home, User, Heart, Settings, LogOut, Inbox } from 'lucide-react'
+import { Home,User, Heart, Settings, LogOut, Inbox } from 'lucide-react'
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
-import { UserDisplay } from '@/types/UserDisplay';
+import { useStore } from '@/store';
+import { useState } from 'react';
+import { Users } from '@/store';
 
 interface LeftSidebarProps {
-  user: UserDisplay | null;
+  user: Users ;
 }
 
 export function LeftSidebar({ user }: LeftSidebarProps) {
+  const { fetchCurrentUser } = useStore();
+  const [currentUser, setCurrentUser] = useState< any >(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCurrentUserData = async () => {
+    const user = await fetchCurrentUser(); // Await the promise
+    if (user) {
+      setCurrentUser(user);
+    }
+  };
   return (
     <div className="w-64 h-screen p-4 border-r sticky top-0">
       <HoverCard>
