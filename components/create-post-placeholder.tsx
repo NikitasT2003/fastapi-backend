@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { PlusCircle } from 'lucide-react'
-import { Post } from '@/types/posts';
-import { Business } from '@/types/business';
+import { Post } from '@/store';
+import { Business } from '@/store';
+import { useStore } from '@/store';
 
 interface CreatePostPlaceholderProps {
   user?: {
@@ -16,20 +17,24 @@ interface CreatePostPlaceholderProps {
   onCreateListing: (listingData: Business) => void;
 }
 
-export function CreatePostPlaceholder({ user, onCreatePost, onCreateListing }: CreatePostPlaceholderProps) {
+export function CreatePostPlaceholder({ user , onCreatePost, onCreateListing }: CreatePostPlaceholderProps) {
   const handlePostClick = () => {
     const postData: Post = {
-      post_id: Date.now(),
+      post_id: Date.now().toString(),
       content: "Your post content here",
-      created_at: new Date(),
-      user_id: user ? user.user_id : 0,
+      created_at: new Date().toISOString(),
+      author: user ? user.name : "Guest",
+      avatar: user ? user.avatar : "",
+      image: "",
+      comments: 0,
+      likes: 0,
+      shares: 0,
     };
     onCreatePost(postData);
   };
 
   const handleListingClick = () => {
     const listingData: Business = {
-      listing_id: Date.now(),
       title: "Your listing title here",
       description: "Your listing description here",
       price: 100,
