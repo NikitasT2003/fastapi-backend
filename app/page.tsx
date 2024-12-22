@@ -4,28 +4,33 @@ import { Header } from '@/components/ui/Header'
 import { Footer } from '@/components/ui/Footer'
 import { EmailSubscribe } from '@/components/ui/EmailSubscribe'
 import { BusinessCard } from '@/components/business-card'
-
+import { useStore } from '@/store';
+import { useState } from 'react'
 export default function Businesses() {
-  const business = {
-    id: '1',
-    title: 'Sample Business',
-    description: 'This is a sample business description.',
-    price: 100000,
-    industry: ['Retail'],
-    createdAt: new Date(),
-    seller: {
-      user_id: 'seller123',
-    },
-    logo: 'https://www.svg.com/logo.svg',
-    banner: 'https://www.svg.com/banner.svg',
+  const { fetchBusinesses, likeBusiness, unlikeBusiness, fetchLikes, createFavorite } = useStore();
+
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const handleBusinessLike = async (listingId: number) => {
+    try {
+      await likeBusiness(listingId);
+    } catch (error) {
+      console.error("Error liking business:", error);
+    }
   };
 
-  const handleLike = (id: string) => {
-    console.log(`Liked business with id: ${id}`);
+  const handleBusinessUnlike = async (listingId: number) => {
+    try {
+      await unlikeBusiness(listingId);
+    } catch (error) {
+      console.error("Error unliking business:", error);
+    }
   };
 
-  const handleFavorite = (id: string) => {
-    console.log(`Favorited business with id: ${id}`);
+  const handleFavorite = (listingId: number) => {
+    createFavorite(listingId);
   };
 
   const handleMessage = (ownerId: string) => {
@@ -39,12 +44,7 @@ export default function Businesses() {
         <div className="w-full max-w-md">
           <h1 className="text-4xl font-bold text-center my-8">Welcome to BusinessMarket</h1>
           <p className="text-center text-xl mb-8">Your platform for buying and selling businesses</p>
-          <BusinessCard 
-            business={business} 
-            onLikeAction={handleLike} 
-            onFavoriteAction={handleFavorite} 
-            onMessageAction={handleMessage} 
-          />
+          
         </div>
       </main>
       <EmailSubscribe />

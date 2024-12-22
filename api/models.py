@@ -12,7 +12,7 @@ class User(Base):
     user_id = Column(Integer, primary_key=True, default=generate_random_id)
     username = Column(String(50), nullable=False, unique=True)
     email = Column(String(100), nullable=False, unique=True)
-    password = Column(String(255), nullable=False)
+    hashed_password = Column(String(255), nullable=False)
     name = Column(String(100), nullable=False)
     is_seller = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
@@ -22,12 +22,13 @@ class User(Base):
     
     # Relationships
     listings = relationship('Business', back_populates='seller', cascade="all, delete-orphan")
-    posts = relationship('Post', back_populates='user', cascade="all, delete")
+    posts = relationship('Post', back_populates='user', foreign_keys='Post.user_id', cascade="all, delete")
     comments = relationship('Comment', back_populates='user', cascade="all, delete")
     likes = relationship('Like', back_populates='user', cascade="all, delete")
     favorites = relationship('Favorite', back_populates='user', cascade="all, delete")
     following = relationship('Follow', foreign_keys='Follow.follower_id', back_populates='follower', cascade="all, delete")
     followers = relationship('Follow', foreign_keys='Follow.followed_id', back_populates='followed', cascade="all, delete")
+    shares = relationship('Share', back_populates='user', cascade="all, delete")
 
 # Business Listing Model
 class Business(Base):
@@ -45,6 +46,7 @@ class Business(Base):
 
     # Relationships
     seller = relationship('User', back_populates='listings')
+    shares = relationship('Share', back_populates='business', cascade="all, delete")
 
 # Post Model
 class Post(Base):
@@ -58,10 +60,12 @@ class Post(Base):
     author = Column(String(100), ForeignKey ('users.username', ondelete='CASCADE'), nullable=False)
     avatar = Column(String(255), ForeignKey('users.profile_picture', ondelete='CASCADE'), nullable=True)
     # Relationships
-    user = relationship('User', back_populates='posts')
+    
+    user = relationship('User', back_populates='posts', foreign_keys=[user_id])
     comments = relationship('Comment', back_populates='post', cascade="all, delete")
     likes = relationship('Like', back_populates='post', cascade="all, delete")
     favorites = relationship('Favorite', back_populates='post', cascade="all, delete")
+    shares = relationship('Share', back_populates='post', cascade="all, delete")
 
 # Comment Model
 class Comment(Base):

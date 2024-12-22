@@ -8,6 +8,9 @@ from sqlalchemy.orm import Session
 
 
 
+
+
+
 class Settings(BaseSettings):
     database_url: str
     secret_key: str

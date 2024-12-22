@@ -24,7 +24,7 @@ router = APIRouter()
 
 @router.post("/healthcheck", response_model=dict)
 async def healthcheck():
-    return {"status": "sucess", "message": "API is healthy"}
+    return {"status": "success", "message": "API is healthy"}
 
 @router.post("/signup", response_model=UserResponse)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -40,7 +40,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     new_user = User(
         username=user.username,
         email=user.email,
-        password=hashed_password,
+        hashed_password=hashed_password,
         name=user.name,
         is_seller=user.is_seller,
         is_admin = user.is_admin
@@ -67,7 +67,6 @@ async def login_for_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
-
 
 # ROOT ROUTE 
 @router.get("/")
@@ -182,6 +181,42 @@ async def delete_business(business_id: int, db: Session = Depends(get_db), curre
     db.delete(db_business)
     db.commit()
     return {"message": "Business deleted successfully", "business_id": business_id}
+
+@router.post("/business/{listing_id}/likes/", response_model=dict)
+async def like_business(listing_id: int, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Like a business."""
+    business = db.query(models.Business).filter(models.Business.listing_id == listing_id).first()
+    if business is None:
+        raise HTTPException(status_code=404, detail="Business not found")
+    
+    existing_like = db.query(models.Like).filter(models.Like.business_id == listing_id, models.Like.user_id == current_user.user_id).first()
+    if existing_like:
+        raise HTTPException(status_code=400, detail="Business already liked")
+
+    new_like = models.Like(business_id=listing_id, user_id=current_user.user_id)
+    db.add(new_like)
+    db.commit()
+    db.refresh(new_like)
+
+    return {"message": "Business liked successfully", "listing_id": listing_id}
+
+
+@router.delete("/business/{listing_id}/unlike", response_model=dict)
+async def unlike_business(listing_id: int, db: Session = Depends(get_db), current_user: schemas.UserResponse = Depends(get_current_user)):
+    """Unlike a business."""
+    business = db.query(models.Business).filter(models.Business.listing_id == listing_id).first()
+    if business is None:
+        raise HTTPException(status_code=404, detail="Business not found")
+    
+    existing_like = db.query(models.Like).filter(models.Like.business_id == listing_id, models.Like.user_id == current_user.user_id).first()
+    if existing_like is None:
+        raise HTTPException(status_code=400, detail="Business not liked yet")
+    
+    db.delete(existing_like)
+    db.commit()
+    db.refresh(existing_like)
+    
+    return {"message": "Business unliked successfully", "listing_id": listing_id}
 
 # Like Count Endpoint
 @router.get("/posts/{post_id}/likes/count", response_model=int)

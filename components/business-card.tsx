@@ -6,19 +6,19 @@ import { Heart, MessageCircle, Share2, ThumbsUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Business } from '@/types/business'
 import { Badge } from '@/components/ui/badge'
+import { Business, useStore } from "@/store"
 
 interface BusinessCardProps {
   business: Business;
   onLikeAction: (id: string) => void;
   onFavoriteAction: (id: string) => void;
-  onMessageAction: (ownerId: string) => void;
+  onMessageAction: (userId: string) => void;
 }
 
 export function BusinessCard({ business, onLikeAction, onFavoriteAction, onMessageAction }: BusinessCardProps) {
   const [isLiked, setIsLiked] = useState(false)
-
+  const { likeBusiness, unlikeBusiness } = useStore();
   const handleLike = () => {
     setIsLiked(!isLiked)
     onLikeAction(String(business.listing_id))

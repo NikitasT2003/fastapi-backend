@@ -1,12 +1,12 @@
-import { create } from "zustand";
-
+import { create, UseBoundStore } from "zustand";
+import { apiRequest } from "@/utils/api";
 export type Users = {
   user_id: number; // User ID of the user
   username: string; // Username of the user
   email: string; // Email of the user
   password: string; // Password of the user (hashed)s
   is_seller: boolean; // Indicates if the user is a seller
-  is_admin: boolean; // Indicates if the user is an admin
+  is_admin?: boolean; // Indicates if the user is an admin
   profile_picture?: string; // Optional profile picture URL
   created_at: Date; // Date when the user was created
   name: string; // Name of the user
@@ -61,6 +61,13 @@ export interface Suggestion {
   username: string; // Make this a required property
 }
 
+export interface Shares {
+  id: string;
+  user_id: string;
+  post_id: string;
+  created_at: string;
+}
+
 
 type AuthStore = {
   currentUser: Users | null;
@@ -82,7 +89,7 @@ type AuthStore = {
   fetchUserById: (userId: number) => Promise<Users>;
   updateUser: (userId: number, userData: Partial<Users>) => Promise<Users>;
   deleteUser: (userId: number) => Promise<{ message: string }>;
-  createPost: (postData: Omit<Post, 'post_id' | 'created_at' | 'user_id'> & { user_id: number }) => Promise<Post>;
+  createPost: (postData: Omit<Post, "user_id" | "created_at" | "post_id"> & { user_id: number; }) =>Promise<Post> ; 
   deletePost: (postId: number) => Promise<{ message: string }>;
   followUser: (userId: number) => Promise<{ message: string }>;
   unfollowUser: (userId: number) => Promise<{ message: string }>;
@@ -104,13 +111,17 @@ type AuthStore = {
   fetchShares: (postId: number) => Promise<any>;
   createBusinessShare: (listingId: number) => Promise<any>;
   fetchBusinessShares: (listingId: number) => Promise<any>;
-  shares: any[];
-  businessShares: any[];
+  likeBusiness: (listingId: number) => Promise<any>;
+  unlikeBusiness: (listingId: number) => Promise<any>;
+  fetchBusinessLikeCount: (listingId: number) => Promise<number>;
+  businessLikes: any[] | string | null;
+  shares: any[] | string | null;
+  businessShares: any[] | string | null;
 };
 
 const URL = process.env.NEXT_PUBLIC_VERCEL_URL
   ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/api`
-  : "http://localhost:3000/api";
+  : "http://localhost:8000/api";
 
 export const useStore = create<AuthStore>((set) => ({
   currentUser: null,
@@ -120,13 +131,13 @@ export const useStore = create<AuthStore>((set) => ({
   comments: [],
   likes: [],
   users: [],
-  shares: [],
+  shares: [] ,
   businessShares: [],
+  businessLikes: [],
 
   fetchShares: async (postId: number) => {
     try {
-      const response = await fetch(`${URL}/posts/${postId}/shares/`);
-      const data = await response.json();
+      const data: Shares[] = await apiRequest(`/posts/${postId}/shares/`, 'GET');
       set({ shares: data });
     } catch (error) {
       console.error("Error fetching shares:", error);
@@ -135,11 +146,7 @@ export const useStore = create<AuthStore>((set) => ({
   
   fetchCurrentUser: async (): Promise<Users | null> => {
     try {
-      const response = await fetch(`${URL}/users/me/`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch current user");
-      }
-      const user: Users = await response.json();
+      const user: Users = await apiRequest(`/users/me/`, 'GET');
       set({ currentUser: user });
       return user;
     } catch (error) {
@@ -148,20 +155,9 @@ export const useStore = create<AuthStore>((set) => ({
     }
   },
 
-  registerUser: async (userData) => {
+  registerUser: async (userData: Omit<Users, 'user_id' | 'created_at'> & { password: string }) => {
     try {
-      const response = await fetch(`${URL}/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-      });
-      if (!response.ok) {
-        throw new Error("Registration failed");
-      }
-      const newUser = await response.json();
-      set({ currentUser: newUser });
+      await apiRequest(`/signup`, 'POST', userData);
     } catch (error) {
       console.error("Error registering user:", error);
     }
@@ -169,20 +165,7 @@ export const useStore = create<AuthStore>((set) => ({
 
   loginUser: async (username, password) => {
     try {
-      const response = await fetch(`${URL}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          username,
-          password,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error("Login failed");
-      }
-      const tokenData = await response.json();
+      const tokenData = await apiRequest(`/login`, 'POST', { username, password });
       console.log("Logged in successfully:", tokenData);
     } catch (error) {
       console.error("Error logging in:", error);
@@ -191,8 +174,7 @@ export const useStore = create<AuthStore>((set) => ({
 
   fetchPosts: async (pageParam = 0) => {
     try {
-      const response = await fetch(`${URL}/posts?skip=${pageParam}&limit=10`);
-      const data = await response.json();
+      const data: { items: Post[] } = await apiRequest(`/posts?skip=${pageParam}&limit=10`, 'GET');
       set((state) => ({ posts: [...state.posts, ...data.items] }));
     } catch (error) {
       console.error("Error fetching posts:", error);
@@ -200,8 +182,7 @@ export const useStore = create<AuthStore>((set) => ({
   },
   fetchFollowSuggestions: async () => {
     try {
-      const response = await fetch(`${URL}/users/suggestions/`);
-      const data = await response.json();
+      const data: Suggestion[] = await apiRequest(`/users/suggestions/`, 'GET');
       set({ followSuggestions: data });
     } catch (error) {
       console.error("Error fetching follow suggestions:", error);
@@ -211,18 +192,16 @@ export const useStore = create<AuthStore>((set) => ({
   fetchBusinesses: async (pageParam = 0) => {
     const skip = pageParam * 10; // Assuming 10 businesses per page
     try {
-        const response = await fetch(`${URL}/business?skip=${skip}&limit=10`);
-        const data = await response.json();
-        set({ businesses: data.items });
+      const data: { items: Business[] } = await apiRequest(`/business?skip=${skip}&limit=10`, 'GET');
+      set({ businesses: data.items });
     } catch (error) {
-        console.error("Error fetching businesses:", error);
+      console.error("Error fetching businesses:", error);
     }
   },
   
   fetchComments: async (postId) => {
     try {
-      const response = await fetch(`${URL}/posts/${postId}/comments/`);
-      const data = await response.json();
+      const data: Comment[] = await apiRequest(`/posts/${postId}/comments/`, 'GET');
       set({ comments: data });
     } catch (error) {
       console.error("Error fetching comments:", error);
@@ -231,8 +210,7 @@ export const useStore = create<AuthStore>((set) => ({
   
   fetchLikes: async (postId) => {
     try {
-      const response = await fetch(`${URL}/posts/${postId}/likes/count`);
-      const data = await response.json();
+      const data: Like[] = await apiRequest(`/posts/${postId}/likes/count`, 'GET');
       set({ likes: data });
     } catch (error) {
       console.error("Error fetching likes:", error);
@@ -241,51 +219,39 @@ export const useStore = create<AuthStore>((set) => ({
 
   fetchUsers: async () => {
     try {
-      const response = await fetch(`${URL}/user/`);
-      const data = await response.json();
+      const data: Users[] = await apiRequest(`/user/`, 'GET');
       set({ users: data });
     } catch (error) {
       console.error("Error fetching users:", error);
     }
   },
 
-  fetchUserById: async (userId) => {
+  fetchUserById: async (userId: number): Promise<Users> => {
     try {
-      const response = await fetch(`${URL}/user/${userId}`);
-      const data = await response.json();
+      const data: Users = await apiRequest(`/user/${userId}`, 'GET');
+      if (!data) {
+        throw new Error("User not found"); // Throw an error if user is not found
+      }
       return data; // Return user data
     } catch (error) {
       console.error("Error fetching user by ID:", error);
+      throw error; // Rethrow the error to ensure the return type is consistent
     }
   },
 
-  updateUser: async (userId, userData) => {
+  updateUser: async (userId: number, userData: Partial<Users>): Promise<Users> => {
     try {
-      const response = await fetch(`${URL}/user/${userId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-      });
-      if (!response.ok) {
-        throw new Error("Update failed");
-      }
-      const updatedUser = await response.json();
-      return updatedUser; // Return updated user data
+      const updatedUser: Users = await apiRequest(`/user/${userId}`, 'PUT', userData);
+      return updatedUser;
     } catch (error) {
       console.error("Error updating user:", error);
+      throw error;
     }
   },
 
   deleteUser: async (userId) => {
     try {
-      const response = await fetch(`${URL}/user/${userId}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error("Delete failed");
-      }
+      await apiRequest(`/user/${userId}`, 'DELETE');
       return { message: "User deleted successfully" }; // Return success message
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -293,33 +259,19 @@ export const useStore = create<AuthStore>((set) => ({
     }
   },
 
-  createPost: async (postData) => {
+  createPost: async (postData: Omit<Post, "user_id" | "created_at" | "post_id"> & { user_id: number; }): Promise<Post> => {
     try {
-      const response = await fetch(`${URL}/posts/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(postData),
-      });
-      if (!response.ok) {
-        throw new Error("Post creation failed");
-      }
-      const newPost = await response.json();
+      const newPost: Post = await apiRequest(`/posts/`, 'POST', postData); // Specify the type
       return newPost; // Return created post data
     } catch (error) {
       console.error("Error creating post:", error);
+      throw error; // Rethrow the error to maintain type consistency
     }
   },
 
   deletePost: async (postId) => {
     try {
-      const response = await fetch(`${URL}/posts/${postId}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error("Delete failed");
-      }
+      await apiRequest(`/posts/${postId}`, 'DELETE');
       return { message: "Post deleted successfully" }; // Return success message
     } catch (error) {
       console.error("Error deleting post:", error);
@@ -329,12 +281,7 @@ export const useStore = create<AuthStore>((set) => ({
 
   followUser: async (userId) => {
     try {
-      const response = await fetch(`${URL}/users/${userId}/follow`, {
-        method: "POST",
-      });
-      if (!response.ok) {
-        throw new Error("Follow failed");
-      }
+      await apiRequest(`/users/${userId}/follow`, 'POST');
       return { message: "Followed successfully" }; // Return success message
     } catch (error) {
       console.error("Error following user:", error);
@@ -344,12 +291,7 @@ export const useStore = create<AuthStore>((set) => ({
 
   unfollowUser: async (userId) => {
     try {
-      const response = await fetch(`${URL}/users/${userId}/unfollow`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error("Unfollow failed");
-      }
+      await apiRequest(`/users/${userId}/unfollow`, 'DELETE');
       return { message: "Unfollowed successfully" }; // Return success message
     } catch (error) {
       console.error("Error unfollowing user:", error);
@@ -359,13 +301,7 @@ export const useStore = create<AuthStore>((set) => ({
 
   createFavorite: async (postId) => {
     try {
-      const response = await fetch(`${URL}/posts/${postId}/favorites/`, {
-        method: "POST",
-      });
-      if (!response.ok) {
-        throw new Error("Favorite creation failed");
-      }
-      const newFavorite = await response.json();
+      const newFavorite = await apiRequest(`/posts/${postId}/favorites/`, 'POST');
       return newFavorite; // Return created favorite data
     } catch (error) {
       console.error("Error creating favorite:", error);
@@ -374,8 +310,7 @@ export const useStore = create<AuthStore>((set) => ({
 
   getFavorites: async () => {
     try {
-      const response = await fetch(`${URL}/users/me/favorites/`);
-      const data = await response.json();
+      const data = await apiRequest(`/users/me/favorites/`, 'GET');
       return data; // Return favorites data
     } catch (error) {
       console.error("Error fetching favorites:", error);
@@ -384,12 +319,7 @@ export const useStore = create<AuthStore>((set) => ({
 
   deleteFavorite: async (favoriteId) => {
     try {
-      const response = await fetch(`${URL}/favorites/${favoriteId}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error("Delete failed");
-      }
+      await apiRequest(`/favorites/${favoriteId}`, 'DELETE');
       return { message: "Favorite deleted successfully" }; // Return success message
     } catch (error) {
       console.error("Error deleting favorite:", error);
@@ -397,122 +327,69 @@ export const useStore = create<AuthStore>((set) => ({
     }
   },
 
-  updatePost: async (postId, postData) => {
+  updatePost: async (postId: number, postData: Partial<Post>): Promise<Post> => {
     try {
-      const response = await fetch(`${URL}/posts/${postId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(postData),
-      });
-      if (!response.ok) {
-        throw new Error("Update post failed");
-      }
-      const updatedPost = await response.json();
+      const updatedPost: Post = await apiRequest(`/posts/${postId}`, 'PUT', postData); // Specify the type
       return updatedPost; // Return updated post data
     } catch (error) {
       console.error("Error updating post:", error);
+      throw error; // Rethrow the error to maintain type consistency
     }
   },
 
-  updateComment: async (commentId, commentData) => {
+  updateComment: async (commentId: number, commentData: Partial<Comment>): Promise<Comment> => {
     try {
-      const response = await fetch(`${URL}/comments/${commentId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(commentData),
-      });
-      if (!response.ok) {
-        throw new Error("Update comment failed");
-      }
-      const updatedComment = await response.json();
+      const updatedComment: Comment = await apiRequest(`/comments/${commentId}`, 'PUT', commentData); // Specify the type
       return updatedComment; // Return updated comment data
     } catch (error) {
       console.error("Error updating comment:", error);
+      throw error; // Rethrow the error to maintain type consistency
     }
   },
 
-  createComment: async (postId, commentData) => {
+  createComment: async (postId: number, commentData: Omit<Comment, "created_at">): Promise<Comment> => {
     try {
-      const response = await fetch(`${URL}/posts/${postId}/comments/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(commentData),
-      });
-      if (!response.ok) {
-        throw new Error("Comment creation failed");
-      }
-      const newComment = await response.json();
+      const newComment: Comment = await apiRequest(`/posts/${postId}/comments/`, 'POST', commentData); // Specify the type
       return newComment; // Return created comment data
     } catch (error) {
       console.error("Error creating comment:", error);
+      throw error; // Rethrow the error to maintain type consistency
     }
   },
 
-  createBusiness: async (businessData) => {
+  createBusiness: async (businessData: Omit<Business, "created_at">): Promise<Business> => {
     try {
-      const response = await fetch(`${URL}/business/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(businessData),
-      });
-      if (!response.ok) {
-        throw new Error("Business creation failed");
-      }
-      const newBusiness = await response.json();
+      const newBusiness: Business = await apiRequest(`/business/`, 'POST', businessData); // Specify the type
       return newBusiness; // Return created business data
     } catch (error) {
       console.error("Error creating business:", error);
+      throw error; // Rethrow the error to maintain type consistency
     }
   },
 
-  fetchBusiness: async (businessId) => {
+  fetchBusiness: async (businessId: number): Promise<Business> => {
     try {
-      const response = await fetch(`${URL}/business/${businessId}`);
-      if (!response.ok) {
-        throw new Error("Business not found");
-      }
-      const business = await response.json();
+      const business: Business = await apiRequest(`/business/${businessId}`, 'GET'); // Specify the type
       return business; // Return business data
     } catch (error) {
       console.error("Error fetching business:", error);
+      throw error; // Rethrow the error to maintain type consistency
     }
   },
 
-  updateBusiness: async (businessId, businessData) => {
+  updateBusiness: async (businessId: number, businessData: Partial<Business>): Promise<Business> => {
     try {
-      const response = await fetch(`${URL}/business/${businessId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(businessData),
-      });
-      if (!response.ok) {
-        throw new Error("Update business failed");
-      }
-      const updatedBusiness = await response.json();
+      const updatedBusiness: Business = await apiRequest(`/business/${businessId}`, 'PUT', businessData); // Specify the type
       return updatedBusiness; // Return updated business data
     } catch (error) {
       console.error("Error updating business:", error);
+      throw error; // Rethrow the error to maintain type consistency
     }
   },
 
   deleteBusiness: async (businessId) => {
     try {
-      const response = await fetch(`${URL}/business/${businessId}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error("Delete business failed");
-      }
+      await apiRequest(`/business/${businessId}`, 'DELETE');
       return { message: "Business deleted successfully" }; // Return success message
     } catch (error) {
       console.error("Error deleting business:", error);
@@ -522,13 +399,7 @@ export const useStore = create<AuthStore>((set) => ({
 
   likePost: async (postId) => {
     try {
-      const response = await fetch(`${URL}/posts/${postId}/like`, {
-        method: "POST",
-      });
-      if (!response.ok) {
-        throw new Error("Like failed");
-      }
-      const likeData = await response.json();
+      const likeData = await apiRequest(`/posts/${postId}/like`, 'POST');
       return likeData; // Return like data
     } catch (error) {
       console.error("Error liking post:", error);
@@ -537,58 +408,36 @@ export const useStore = create<AuthStore>((set) => ({
 
   unlikePost: async (postId) => {
     try {
-      const response = await fetch(`${URL}/posts/${postId}/like`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error("Unlike failed");
-      }
-      const unlikeData = await response.json();
+      const unlikeData = await apiRequest(`/posts/${postId}/like`, 'DELETE');
       return unlikeData; // Return unlike data
     } catch (error) {
       console.error("Error unliking post:", error);
     }
   },
 
-  fetchLikeCount: async (postId) => {
+  fetchLikeCount: async (postId: number): Promise<number> => {
     try {
-      const response = await fetch(`${URL}/posts/${postId}/likes/count`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch like count");
-      }
-      const likeCount = await response.json();
+      const likeCount: number = await apiRequest(`/posts/${postId}/likes/count`, 'GET');
       return likeCount; // Return like count
     } catch (error) {
       console.error("Error fetching like count:", error);
+      throw error; // Rethrow the error to maintain type consistency
     }
   },
 
-  fetchUserSuggestions: async () => {
+  fetchUserSuggestions: async (): Promise<Suggestion[]> => {
     try {
-      const response = await fetch(`${URL}/users/suggestions/`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch user suggestions");
-      }
-      const suggestions = await response.json();
+      const suggestions: Suggestion[] = await apiRequest(`/users/suggestions/`, 'GET'); // Specify the type
       return suggestions; // Return user suggestions
     } catch (error) {
       console.error("Error fetching user suggestions:", error);
+      throw error; // Rethrow the error to maintain type consistency
     }
   },
 
   createShare: async (postId: number) => {
     try {
-      const response = await fetch(`${URL}/posts/${postId}/shares/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}), // Add any necessary share data here
-      });
-      if (!response.ok) {
-        throw new Error("Failed to create share");
-      }
-      const newShare = await response.json();
+      const newShare = await apiRequest(`/posts/${postId}/shares/`, 'POST', {});
       return newShare; // Return the created share
     } catch (error) {
       console.error("Error creating share:", error);
@@ -597,17 +446,7 @@ export const useStore = create<AuthStore>((set) => ({
 
   createBusinessShare: async (listingId: number) => {
     try {
-      const response = await fetch(`${URL}/business/${listingId}/shares/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}), // Add any necessary share data here
-      });
-      if (!response.ok) {
-        throw new Error("Failed to create business share");
-      }
-      const newShare = await response.json();
+      const newShare = await apiRequest(`/business/${listingId}/shares/`, 'POST', {});
       return newShare; // Return the created business share
     } catch (error) {
       console.error("Error creating business share:", error);
@@ -616,11 +455,38 @@ export const useStore = create<AuthStore>((set) => ({
 
   fetchBusinessShares: async (listingId: number) => {
     try {
-      const response = await fetch(`${URL}/business/${listingId}/shares/`);
-      const data = await response.json();
-      set({ businessShares: data }); // Assuming you want to store business shares in the state
+      const data = await apiRequest<Shares[]>(`/business/${listingId}/shares/`, 'GET');
+      set({ businessShares: data });
     } catch (error) {
       console.error("Error fetching business shares:", error);
+    }
+  },
+
+  likeBusiness: async (listingId: number) => {
+    try {
+      const result = await apiRequest(`/business/${listingId}/likes/`, 'POST');
+      return result; // Return the result of the like action
+    } catch (error) {
+      console.error("Error liking business:", error);
+    }
+  },
+
+  unlikeBusiness: async (listingId: number) => {
+    try {
+      const result = await apiRequest(`/business/${listingId}/unlike`, 'DELETE');
+      return result; // Return the result of the unlike action
+    } catch (error) {
+      console.error("Error unliking business:", error);
+    }
+  },
+
+  fetchBusinessLikeCount: async (listingId: number): Promise<number> => {
+    try {
+      const likeCount: number = await apiRequest(`/business/${listingId}/likes/count`, 'GET');
+      return likeCount; // Return like count
+    } catch (error) {
+      console.error("Error fetching business like count:", error);
+      throw error; // Rethrow the error to maintain type consistency
     }
   },
 }));

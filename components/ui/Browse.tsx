@@ -15,7 +15,7 @@ import Link from 'next/link';
 
 
 export function Browse() {
-  const { followUser, createShare , createComment, fetchFollowSuggestions, fetchBusinesses, followSuggestions, businesses, posts, fetchCurrentUser, createPost, createListing, createFavorite } = useStore(); // Use the store functions
+  const { likeBusiness, likePost, followUser, createShare , createComment, fetchFollowSuggestions, fetchBusinesses, followSuggestions, businesses, posts, fetchCurrentUser, createPost, createListing, createFavorite } = useStore(); // Use the store functions
   const [currentUser, setCurrentUser] = useState< any >(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export function Browse() {
 
   const handleLike = async (postId: string) => {
     try {
-      await createFavorite(Number(postId));
+      await likePost(Number(postId));
       // Optionally, you can add logic to update the UI or show a success message
     } catch (error) {
       console.error("Error liking post:", error);

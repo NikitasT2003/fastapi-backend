@@ -4,10 +4,10 @@ export async function apiRequest<T>(
   body?: any,
   contentType: 'json' | 'form' = 'json'
 ): Promise<T> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL;
 
   if (!baseUrl) {
-    throw new Error('NEXT_PUBLIC_API_URL is not defined');
+    throw new Error('NEXT_PUBLIC_VERCEL_URL is not defined');
   }
 
   let headers: HeadersInit = {

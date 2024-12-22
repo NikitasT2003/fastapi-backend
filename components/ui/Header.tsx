@@ -89,7 +89,7 @@ export function Header() {
                       </button>
                     </>
                   ) : (
-                    <Link href="/auth" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <Link href="/login" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                       Signup / Login
                     </Link>
                   )}
