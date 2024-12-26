@@ -13,7 +13,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
     is_seller: bool
-    is_admin: bool
+    
 
 class UserResponse(UserBase):
     name: str

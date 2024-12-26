@@ -7,20 +7,19 @@ import { useStore } from "@/store"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import {  AlertTitle , AlertDescription} from "@/components/ui/alert"
+import Image from 'next/image';
 
 export function LoginForm({ className, ...props }: React.ComponentProps<"form">) {
   const router = useRouter()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isLogin, setIsLogin] = useState(false);
   const { loginUser } = useStore()
-  const [isLogin, setIsLogin] = useState(false)
   
   
 
   const handleLogin = async () => {
-    setLoading(true);
     try {
       await loginUser(username, password);
       if (isLogin) {
@@ -34,8 +33,6 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"form">)
       } else {
         setError('An unknown error occurred');
       }
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -129,10 +126,12 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"form">)
               </div>
             </form>
             <div className="relative hidden bg-muted md:block">
-              <img
+              <Image
                 src="/placeholder.svg"
                 alt="Image"
                 className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+                width={500}
+                height={300}
               />
             </div>
           </CardContent>

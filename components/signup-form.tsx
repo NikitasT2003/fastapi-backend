@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useStore } from "@/store"
 import { AlertTitle , AlertDescription} from "@/components/ui/alert"
+import { apiRequest } from "@/utils/api"
 
 export function SignupForm({ className, ...props }: React.ComponentProps<"form">) {
   const router = useRouter()
@@ -18,8 +19,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"form">
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { registerUser } = useStore()
-  const [isSignup, setIsSignup] = useState(false)
-
+  
   const handleSignup = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setLoading(true)
@@ -29,16 +29,12 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"form">
         username,
         email,
         password,
-        is_seller: isSeller
+        is_seller: isSeller,
       }
-      await registerUser(payload)
-      if (isSignup) {
-        AlertTitle({ title: "Signup Successful"});
-        AlertDescription({ title : "Your account has been created!"});
-        router.push('/login');
-        
-        }
-      }catch (err) {
+      await apiRequest('/signup', 'POST', payload)
+      alert('Signup successful')
+      router.push('/login')
+    } catch (err) {
       if (err instanceof Error) {
         setError(err.message)
       } else {

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { useStore } from '@/store'
 import { signIn } from 'next-auth/react'
 import { EyeOff, Eye } from 'react-feather';
+import Image from 'next/image';
 
 export function Auth() {
   const router = useRouter();
@@ -161,7 +162,7 @@ export function Auth() {
           </CardContent>
         </div>
         <div className="w-1/2">
-          <img src="/path/to/your/image.jpg" alt="Auth Image" className="w-full h-full object-cover" />
+          <Image src="/path/to/your/image.jpg" alt="Auth Image" width={500} height={300} />
         </div>
       </Card>
     </div>

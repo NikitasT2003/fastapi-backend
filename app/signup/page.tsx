@@ -10,8 +10,8 @@ export default function SignupPage() {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const formData = new FormData(event.target as HTMLFormElement)
-    const userData = Object.fromEntries(formData.entries())
-    registerUser(userData as any)
+    const userData = Object.fromEntries(formData.entries()) as UserDataType
+    registerUser(userData)
   }
 
   return (

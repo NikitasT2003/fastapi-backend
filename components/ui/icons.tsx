@@ -1,4 +1,4 @@
-import { Loader2, LightbulbIcon, Facebook } from 'lucide-react'
+import { Loader2, Facebook } from 'lucide-react'
 import type { LucideProps } from 'lucide-react'
 
 export const Icons = {

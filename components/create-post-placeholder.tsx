@@ -5,12 +5,11 @@ import { Input } from "@/components/ui/input"
 import { PlusCircle } from 'lucide-react'
 import { Post } from '@/store';
 import { Business } from '@/store';
-import { useStore } from '@/store';
 
 interface CreatePostPlaceholderProps {
   user?: {
     name: string;
-    avatar: string;
+    image: string;
     user_id: number;
   } | null;
   onCreatePost: (postData: Post) => void;
@@ -24,8 +23,8 @@ export function CreatePostPlaceholder({ user , onCreatePost, onCreateListing }: 
       content: "Your post content here",
       created_at: new Date().toISOString(),
       author: user ? user.name : "Guest",
-      avatar: user ? user.avatar : "",
-      image: "",
+      image: user ? user.image : "",
+      user_id: user ? user.user_id : 0,
       comments: 0,
       likes: 0,
       shares: 0,
@@ -49,7 +48,7 @@ export function CreatePostPlaceholder({ user , onCreatePost, onCreateListing }: 
       <CardContent className="pt-6">
         <div className="flex items-center space-x-4">
           <Avatar>
-            <AvatarImage src={user?.avatar} alt={user?.name} />
+            <AvatarImage src={user?.image} alt={user?.name} />
             <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
           </Avatar>
           <Input 

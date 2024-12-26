@@ -17,26 +17,27 @@ interface LeftSidebarProps {
 
 export function LeftSidebar({ user }: LeftSidebarProps) {
   const { fetchCurrentUser } = useStore();
-  const [setCurrentUser] = useState< any >(null);
+  const [setCurrentUser] = useState<Users | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCurrentUserData = async () => {
-    try {
-      const user = await fetchCurrentUser(); // Await the promise
-      if (user) {
-        setCurrentUser(user);
-      }
-    } catch (err) {
-      setError("Failed to fetch user data");
-    } finally {
-      setLoading(false); // Set loading to false after fetching
-    }
-  };
-
   useEffect(() => {
+    const fetchCurrentUserData = async () => {
+      try {
+        const user = await fetchCurrentUser(); // Await the promise
+        if (user) {
+          setCurrentUser(user);
+        }
+      } catch (err) {
+        setError("Failed to fetch user data");
+        console.error(err); // Log the error if needed
+      } finally {
+        setLoading(false); // Set loading to false after fetching
+      }
+    };
+
     fetchCurrentUserData();
-  }, []);
+  }, [fetchCurrentUser, setCurrentUser]);
 
   if (loading) {
     return <div>Loading...</div>; // Show loading message or spinner

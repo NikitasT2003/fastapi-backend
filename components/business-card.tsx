@@ -21,7 +21,13 @@ export function BusinessCard({ business, onLikeAction, onFavoriteAction, onMessa
   const { likeBusiness, unlikeBusiness } = useStore();
   const handleLike = () => {
     setIsLiked(!isLiked)
-    onLikeAction(String(business.listing_id))
+    if (isLiked) {
+      unlikeBusiness(business.id)
+      onLikeAction(business.id)
+    } else {
+      likeBusiness(business.id)
+      onLikeAction(business.id)
+    }
   }
 
   const handleFavorite = () => {

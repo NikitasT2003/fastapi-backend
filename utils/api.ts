@@ -4,7 +4,10 @@ export async function apiRequest<T>(
   body?: any,
   contentType: 'json' | 'form' = 'json'
 ): Promise<T> {
-  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL  
+  ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/api`
+  : "http://localhost:8000/api";
+
 
   if (!baseUrl) {
     throw new Error('NEXT_PUBLIC_VERCEL_URL is not defined');

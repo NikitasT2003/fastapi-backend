@@ -1,24 +1,21 @@
 import { create, UseBoundStore } from "zustand";
 import { apiRequest } from "@/utils/api";
-export type Users = {
-  user_id: number; // User ID of the user
+export type Users = { // User ID of the user
   username: string; // Username of the user
   email: string; // Email of the user
-  password: string; // Password of the user (hashed)s
-  is_seller: boolean; // Indicates if the user is a seller
-  is_admin?: boolean; // Indicates if the user is an admin
-  profile_picture?: string; // Optional profile picture URL
-  created_at: Date; // Date when the user was created
   name: string; // Name of the user
+  profile_picture?: string; // Optional profile picture URL
   description?: string; // Optional description of the user
+  is_seller: boolean; // Indicates if the user is a seller
+  created_at: Date; // Date when the user was created
 };
 
 export type Post = {
   post_id: string; // Ensure this matches your actual data type
   content: string;
-  image: string;
-  avatar: string; // Add this line
+  image?: string; // Made optional to match PostBase
   author: string; // Ensure this is included
+  user_id: number; // Added user_id to match PostCreate
   comments: number; // Ensure this is included
   likes: number; // Ensure this is included
   shares: number; // Ensure this is included
@@ -26,12 +23,12 @@ export type Post = {
 };
 
 export type Business = {
-  seller_id: number;
+  seller_id: number; // Ensure this is included
   title: string;
   description: string;
   price: number;
-  industry?: string[];
-  created_at: Date;
+  industry?: string[]; // Optional to match BusinessBase
+  created_at: Date; // Ensure this is included
 };
 
 export type Comment = {
@@ -72,7 +69,7 @@ export interface Shares {
 type AuthStore = {
   currentUser: Users | null;
   fetchCurrentUser: () => Promise<Users | null>;
-  registerUser: (userData: Omit<Users, 'user_id' | 'created_at'> & { password: string }) => Promise<void>;
+  registerUser: (name : string, username : string, email : string, password : string, is_seller : boolean , profile_picture ?: string , description ?: string ) => Promise<void>;
   loginUser: (username: string, password: string) => Promise<void>;
   posts: Post[];
   fetchPosts: (pageParam?: number) => Promise<void>;
@@ -155,9 +152,9 @@ export const useStore = create<AuthStore>((set) => ({
     }
   },
 
-  registerUser: async (userData: Omit<Users, 'user_id' | 'created_at'> & { password: string }) => {
+  registerUser: async (name : string, username : string, email : string , password : string, is_seller : boolean) => {
     try {
-      await apiRequest(`/signup`, 'POST', userData);
+      await apiRequest(`/signup`, 'POST', {name, username, email, password, is_seller});
     } catch (error) {
       console.error("Error registering user:", error);
     }
