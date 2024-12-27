@@ -4,7 +4,7 @@ from sqlalchemy import pool
 from alembic import context
 
 # Import your models here
-from models import Base  # Ensure this is the correct import path
+from index import Base  # Ensure this is the correct import path
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

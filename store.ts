@@ -7,7 +7,7 @@ export type Users = { // User ID of the user
   profile_picture?: string; // Optional profile picture URL
   description?: string; // Optional description of the user
   is_seller: boolean; // Indicates if the user is a seller
-  created_at: Date; // Date when the user was created
+  created_at?: Date; // Date when the user was created
 };
 
 export type Post = {
