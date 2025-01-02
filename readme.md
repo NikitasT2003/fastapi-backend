@@ -55,6 +55,13 @@ This project is a web application built using **FastAPI**, designed to facilitat
      ```bash
      uvicorn api.index:app --reload
      ```
+    **Note:** Sometimes, this command may not work as expected. If you encounter issues, try changing your directory to the `api` folder first, and then run:
+
+    ```bash
+    cd api
+    uvicorn index:app --reload
+    ```
+
 5. **Access the API**:
    - Open your browser and navigate to `http://localhost:8000/api/docs` to access the interactive API documentation provided by FastAPI.
 
@@ -66,3 +73,4 @@ This project is a web application built using **FastAPI**, designed to facilitat
 
 ## Conclusion 🏁
 This project serves as a robust foundation for building a social platform with user-generated content and business listings. With FastAPI's speed and ease of use, along with PostgreSQL's reliability, developers can extend and customize the application to meet their specific needs.
+
