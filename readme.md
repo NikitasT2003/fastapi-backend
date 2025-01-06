@@ -2,7 +2,7 @@
 
 ## Overview 🌐
 
-This project is a web application built using **FastAPI**, designed to facilitate a social platform where users can create accounts, post content, like and comment on posts, follow other users, and manage business listings. The application utilizes a **PostgreSQL** database for data storage and **SQLAlchemy** for ORM (Object-Relational Mapping).
+This project is a web application Backend built using **FastAPI**, designed to facilitate a social platform where users can create accounts, post content, like and comment on posts, follow other users, and manage business listings. The application utilizes a **PostgreSQL** database for data storage and **SQLAlchemy** for ORM (Object-Relational Mapping).
 
 ## Tech Stack ⚙️
 - **Backend Framework**: FastAPI
